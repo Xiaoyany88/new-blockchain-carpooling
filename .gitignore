@@ -1,0 +1,27 @@
+# Node modules and build directories
+node_modules/
+build/
+
+# Environment files (avoid committing sensitive data)
+.env
+
+# Logs
+*.log
+
+node_modules
+.env
+
+# Hardhat files
+/cache
+/artifacts
+
+# TypeChain files
+/typechain
+/typechain-types
+
+# solidity-coverage files
+/coverage
+/coverage.json
+
+# Hardhat Ignition default folder for deployments against a local node
+ignition/deployments/chain-31337
