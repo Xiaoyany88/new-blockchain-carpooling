@@ -1,6 +1,7 @@
 import { useEffect, useState } from "react";
 import { ethers } from "ethers";
 import CarpoolTokenABI from "../abis/CarpoolToken.json"; // ABI for CarpoolToken contract
+import { CONTRACT_ADDRESSES } from "../config/contracts";
 
 const useCarpoolToken = (provider: ethers.providers.Web3Provider | null) => {
   const [carpoolToken, setCarpoolToken] = useState<ethers.Contract | null>(null);
@@ -9,7 +10,7 @@ const useCarpoolToken = (provider: ethers.providers.Web3Provider | null) => {
     if (provider) {
       const signer = provider.getSigner();
       const contract = new ethers.Contract(
-        "0xe69BfD2aBFd3FfAfb95816f74DCf2C6b83b5050c", // Replace with your contract's address
+        CONTRACT_ADDRESSES.CARPOOL_TOKEN,
         CarpoolTokenABI,
         signer
       );
@@ -43,6 +44,31 @@ const useCarpoolToken = (provider: ethers.providers.Web3Provider | null) => {
     }
   };
 
+  // Function to reward a driver
+  const rewardDriver = async (driverAddress: string) => {
+    if (!carpoolToken || !driverAddress) return null;
+    try {
+      const tx = await carpoolToken.rewardDriver(driverAddress);
+      await tx.wait();
+      return `Driver ${driverAddress} has been rewarded!`;
+    } catch (error) {
+      console.error("Error rewarding driver:", error);
+      throw error;
+    }
+  };
+  
+  // Function to get driver rewards
+  const getDriverRewards = async (driverAddress: string) => {
+    if (!carpoolToken || !driverAddress) return null;
+    try {
+      const rewards = await carpoolToken.getDriverRewards(driverAddress);
+      return ethers.utils.formatUnits(rewards, 18); // Assuming token has 18 decimals
+    } catch (error) {
+      console.error("Error fetching driver rewards:", error);
+      throw error;
+    }
+  };
+
   // Function to check the token balance of an address
   const getBalance = async (userAddress: string) => {
     if (!carpoolToken || !userAddress) return null;
@@ -55,7 +81,14 @@ const useCarpoolToken = (provider: ethers.providers.Web3Provider | null) => {
     }
   };
 
-  return { carpoolToken, mintTokens, burnTokens, getBalance };
+  return { 
+    carpoolToken, 
+    mintTokens, 
+    burnTokens, 
+    rewardDriver, 
+    getDriverRewards, 
+    getBalance 
+  };
 };
 
 export default useCarpoolToken;

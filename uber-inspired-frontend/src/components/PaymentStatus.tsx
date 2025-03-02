@@ -1,50 +1,37 @@
-import React, { useEffect, useState } from "react";
-import { ethers, BigNumber } from "ethers";
-import usePaymentEscrow from "../hooks/usePaymentEscrow";
+import React, { useState } from "react";
+import useProvider from '../hooks/useProvider';
+import useRideOffer from "../hooks/useRideOffer";
 
 const PaymentStatus: React.FC = () => {
   const [status, setStatus] = useState<string | null>(null);
   const [error, setError] = useState<string | null>(null);
-  const [provider, setProvider] = useState<ethers.providers.Web3Provider | null>(null);
+  const provider = useProvider();
+  const { getRide } = useRideOffer(provider);
   const [rideId, setRideId] = useState<string>("");
 
-  useEffect(() => {
-    if (typeof window !== 'undefined' && window?.ethereum) {
-      const web3Provider = new ethers.providers.Web3Provider(window.ethereum);
-      setProvider(web3Provider);
-    }
-  }, []);
-
-  const paymentEscrow = usePaymentEscrow(provider);
-
   const fetchStatus = async () => {
-    if (!paymentEscrow || !rideId) {
+    if (!getRide || !rideId) {
       setError("Please provide a ride ID");
       return;
     }
 
     try {
-      // Convert string rideId to bytes32
-      const bytes32RideId = ethers.utils.formatBytes32String(rideId);
-      const result = await paymentEscrow.getRideStatus(bytes32RideId);
+      const rideIdNumber = parseInt(rideId);
+      const ride = await getRide(rideIdNumber);
       
-      // Ensure result is treated as BigNumber
-      const statusBigNumber = BigNumber.from(result);
-      setStatus(getRideStatusText(statusBigNumber));
-      setError(null);
+      if (ride) {
+        setStatus(ride.isActive ? 
+          (new Date(ride.departureTime * 1000) > new Date() ? "Active" : "In Progress") : 
+          "Completed or Cancelled");
+        setError(null);
+      } else {
+        setError("Ride not found");
+        setStatus(null);
+      }
     } catch (err) {
       console.error("Error fetching status:", err);
       setError("Failed to fetch ride status");
-    }
-  };
-
-  const getRideStatusText = (statusCode: BigNumber): string => {
-    switch (statusCode.toNumber()) {
-      case 0: return "Pending";
-      case 1: return "Active";
-      case 2: return "Completed";
-      case 3: return "Cancelled";
-      default: return "Unknown";
+      setStatus(null);
     }
   };
 

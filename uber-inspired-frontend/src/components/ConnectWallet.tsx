@@ -1,18 +1,29 @@
-import React from "react";
-import { ethers } from "ethers";
-import { useState, useEffect } from "react";
+import React, { useState, useEffect } from "react";
+import useProvider from "../hooks/useProvider";
 
 const ConnectWallet: React.FC = () => {
   const [isConnected, setIsConnected] = useState(false);
   const [address, setAddress] = useState<string | null>(null);
-  const [provider, setProvider] = useState<ethers.providers.Web3Provider | null>(null);
+  const provider = useProvider();
 
   useEffect(() => {
-    if (typeof window !== 'undefined' && window?.ethereum) {
-      const web3Provider = new ethers.providers.Web3Provider(window.ethereum);
-      setProvider(web3Provider);
+    // Check if already connected
+    if (provider) {
+      const checkConnection = async () => {
+        try {
+          const accounts = await provider.listAccounts();
+          if (accounts && accounts.length > 0) {
+            setAddress(accounts[0]);
+            setIsConnected(true);
+          }
+        } catch (err) {
+          console.error("Failed to check connection:", err);
+        }
+      };
+      
+      checkConnection();
     }
-  }, []);
+  }, [provider]);
 
   const connect = async () => {
     if (provider) {

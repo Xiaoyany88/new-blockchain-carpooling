@@ -1,10 +1,14 @@
-import React from "react";
-import { ThemeProvider, CssBaseline, AppBar, Toolbar, Typography, Container, Grid, Paper, Box } from "@mui/material";
+import React, { useState } from "react";
+import { BrowserRouter as Router, Routes, Route } from 'react-router-dom';
+import {
+  ThemeProvider, CssBaseline, AppBar, Toolbar, Typography, Container, Grid, Paper, Box,
+  Button, Tabs, Tab
+} from "@mui/material";
 import { createTheme } from "@mui/material/styles";
 import ConnectWallet from "./components/ConnectWallet";
-import RideBooking from "./components/RideBooking";
-import Rating from "./components/Rating";
-import PaymentStatus from "./components/PaymentStatus";
+import RideSearch from "./components/RideSearch";
+import DriverForm from "./components/DriverForm";
+import MyRides from './pages/MyRides';
 
 const darkTheme = createTheme({
   palette: {
@@ -19,79 +23,85 @@ const darkTheme = createTheme({
 });
 
 const App: React.FC = () => {
+  const [activeTab, setActiveTab] = useState(0);
+  const [userMode, setUserMode] = useState<'rider' | 'driver'>('rider');
+
   return (
     <ThemeProvider theme={darkTheme}>
       <CssBaseline />
-      <Box sx={{ flexGrow: 1 }}>
-        <AppBar position="static">
-          <Toolbar>
-            <Typography variant="h6" component="div" sx={{ flexGrow: 1 }}>
-              CarpoolX
-            </Typography>
-            <ConnectWallet />
-          </Toolbar>
-        </AppBar>
-        
-        <Container maxWidth="lg" sx={{ mt: 4, mb: 4 }}>
-          <Grid container spacing={3}>
-            <Grid item xs={12} md={8}>
-              <Paper
-                sx={{
-                  p: 2,
-                  display: 'flex',
-                  flexDirection: 'column',
-                  height: 400,
-                  backgroundColor: 'rgba(0, 0, 0, 0.8)'
-                }}
+      <Router>
+        <Box sx={{ flexGrow: 1 }}>
+          <AppBar position="static">
+            <Toolbar>
+              <Typography variant="h6" sx={{ flexGrow: 1 }}>
+                CarpoolX
+              </Typography>
+              <Button 
+                variant={userMode === 'rider' ? 'contained' : 'text'}
+                onClick={() => setUserMode('rider')}
+                sx={{ mr: 1 }}
               >
-                {/* Map placeholder */}
-                <Box sx={{ height: '100%', bgcolor: 'grey.800', borderRadius: 1 }}>
-                  <Typography variant="h6" sx={{ p: 2 }}>Map View</Typography>
-                </Box>
-              </Paper>
-            </Grid>
-            
-            <Grid item xs={12} md={4}>
-              <Paper
-                sx={{
-                  p: 2,
-                  display: 'flex',
-                  flexDirection: 'column',
-                  backgroundColor: 'rgba(0, 0, 0, 0.8)'
-                }}
+                Rider Mode
+              </Button>
+              <Button 
+                variant={userMode === 'driver' ? 'contained' : 'text'}
+                onClick={() => setUserMode('driver')}
+                sx={{ mr: 2 }}
               >
-                <RideBooking />
-              </Paper>
+                Driver Mode
+              </Button>
+              <ConnectWallet />
+            </Toolbar>
+          </AppBar>
+
+          <Container maxWidth="lg" sx={{ mt: 4, mb: 4 }}>
+            <Grid container spacing={3}>
+              <Grid item xs={12} md={8}>
+                <Paper sx={{ height: '70vh', bgcolor: 'grey.800' }}>
+                  <Box sx={{ p: 2 }}>
+                    <Typography variant="h6">Interactive Map</Typography>
+                    <Typography variant="body2" color="textSecondary">
+                      Real map integration coming soon...
+                    </Typography>
+                  </Box>
+                </Paper>
+              </Grid>
+
+              <Grid item xs={12} md={4}>
+                <Paper sx={{ p: 2, bgcolor: 'background.paper' }}>
+                  {userMode === 'driver' ? (
+                    <DriverForm />
+                  ) : (
+                    <>
+                      <Tabs 
+                        value={activeTab} 
+                        onChange={(e, v) => setActiveTab(v)}
+                        sx={{ mb: 2 }}
+                      >
+                        <Tab label="Search" />
+                        <Tab label="My Bookings" />
+                        <Tab label="History" />
+                      </Tabs>
+                      
+                      {activeTab === 0 && <RideSearch onBookingSuccess={() => {
+                        // This will trigger a refresh of MyRides when a booking is successful
+                        setActiveTab(1); // Switch to My Bookings tab
+                      }} />}
+                      {activeTab === 1 && <MyRides showTabs={false} showOnly="upcoming" showTitle={false} />}
+                      {activeTab === 2 && <MyRides showTabs={false} showOnly="past" showTitle={false} />}
+                    </>
+                  )}
+                </Paper>
+              </Grid>
             </Grid>
-            
-            <Grid item xs={12} md={6}>
-              <Paper
-                sx={{
-                  p: 2,
-                  display: 'flex',
-                  flexDirection: 'column',
-                  backgroundColor: 'rgba(0, 0, 0, 0.8)'
-                }}
-              >
-                <Rating />
-              </Paper>
-            </Grid>
-            
-            <Grid item xs={12} md={6}>
-              <Paper
-                sx={{
-                  p: 2,
-                  display: 'flex',
-                  flexDirection: 'column',
-                  backgroundColor: 'rgba(0, 0, 0, 0.8)'
-                }}
-              >
-                <PaymentStatus />
-              </Paper>
-            </Grid>
-          </Grid>
-        </Container>
-      </Box>
+          </Container>
+        </Box>
+        <Routes>
+          <Route path="/" element={null} />
+          <Route path="/offer-ride" element={<DriverForm />} />
+          <Route path="/my-rides" element={<MyRides />} />
+        </Routes>
+      </Router>
     </ThemeProvider>
   );
 };

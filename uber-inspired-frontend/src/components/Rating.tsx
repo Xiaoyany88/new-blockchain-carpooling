@@ -1,30 +1,17 @@
-import React, { useState, useEffect } from "react";
-import { ethers } from "ethers";
-import usePaymentEscrow from "../hooks/usePaymentEscrow";
+import React, { useState } from "react";
+import useProvider from '../hooks/useProvider';
+import useReputationSystem from "../hooks/useReputationSystem";
 
 const Rating: React.FC = () => {
   const [targetAddress, setTargetAddress] = useState<string>("");
   const [rating, setRating] = useState<string>("");
+  const [rideId, setRideId] = useState<string>("");
   const [status, setStatus] = useState<string | null>(null);
-  const [provider, setProvider] = useState<ethers.providers.Web3Provider | null>(null);
-
-  useEffect(() => {
-    if (typeof window !== 'undefined' && window?.ethereum) {
-      const web3Provider = new ethers.providers.Web3Provider(window.ethereum);
-      setProvider(web3Provider);
-    }
-  }, []);
-
-  const paymentEscrow = usePaymentEscrow(provider);
-
-  const getErrorMessage = (error: unknown): string => {
-    if (error instanceof Error) return error.message;
-    if (typeof error === 'string') return error;
-    return "Error submitting rating";
-  };
+  const provider = useProvider();
+  const { rateDriver } = useReputationSystem(provider);
 
   const handleSubmitRating = async () => {
-    if (!provider || !paymentEscrow || !targetAddress || !rating) {
+    if (!provider || !rateDriver || !targetAddress || !rating || !rideId) {
       setStatus("Please ensure wallet is connected and all fields are filled");
       return;
     }
@@ -37,25 +24,28 @@ const Rating: React.FC = () => {
       }
 
       setStatus("Submitting rating...");
-      // No need to wait again since submitFeedback already returns the receipt
-      await paymentEscrow.submitFeedback(targetAddress, ratingNumber);
+      
+      // Use rateDriver for all cases
+      const result = await rateDriver(targetAddress, ratingNumber, parseInt(rideId));
+      
       setStatus("Rating submitted successfully!");
       
       // Clear inputs
       setTargetAddress("");
       setRating("");
+      setRideId("");
     } catch (error: unknown) {
       console.error("Error submitting rating:", error);
-      setStatus(getErrorMessage(error));
+      setStatus(error instanceof Error ? error.message : "Error submitting rating");
     }
   };
 
   return (
     <div>
-      <h2>Submit Rating</h2>
+      <h2>Rate a Driver</h2>
       <input
         type="text"
-        placeholder="Address to Rate"
+        placeholder="Driver Address"
         value={targetAddress}
         onChange={(e) => setTargetAddress(e.target.value)}
       />
@@ -66,6 +56,12 @@ const Rating: React.FC = () => {
         placeholder="Rating (1-5)"
         value={rating}
         onChange={(e) => setRating(e.target.value)}
+      />
+      <input
+        type="text"
+        placeholder="Ride ID (required)"
+        value={rideId}
+        onChange={(e) => setRideId(e.target.value)}
       />
       <button onClick={handleSubmitRating}>Submit Rating</button>
       {status && <p>{status}</p>}

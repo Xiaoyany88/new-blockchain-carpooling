@@ -1,0 +1,9 @@
+{
+  "sepolia": {
+    "RideOffer": "0xfBDb38032188316396008a49eD0F0C3A8b49fEa6",
+    "ReputationSystem": "0x6C7EB37AC09dA4bfB61b5F002F11EEf639DEf324",
+    "PaymentEscrow": "0xc589C9bC83Fb580f60E5C829d30246D9bB0C213a",
+    "CarpoolToken": "0xA2f965eb76dA2eA09815E7A760f3bE30aEE1B5ab",
+    "CarpoolSystem": "0x52E2F86FB67Edb7FF07DbA69Ea8aFcBa63536865"
+  }
+}
