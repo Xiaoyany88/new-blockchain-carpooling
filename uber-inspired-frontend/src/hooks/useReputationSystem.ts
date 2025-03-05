@@ -103,6 +103,24 @@ const useReputationSystem = (provider: any) => {
     }
   };
 
+  
+  const hasUserRatedRide = async (rideId: number) => {
+    if (!reputationSystem || !provider) return false;
+    
+    try {
+      const signer = provider.getSigner();
+      const userAddress = await signer.getAddress();
+      
+      // Access the public hasRated mapping directly
+      // Public mappings in Solidity automatically generate getter methods
+      const hasRated = await reputationSystem.hasRated(rideId, userAddress);
+      return hasRated;
+    } catch (error) {
+      console.error("Error checking if user rated ride:", error);
+      return false;
+    }
+  };
+  
   return { 
     reputationSystem, 
     rateUser, 
@@ -110,7 +128,8 @@ const useReputationSystem = (provider: any) => {
     recordRideCompletion, 
     recordRideCancellation, 
     getAverageRating, 
-    getDriverStats 
+    getDriverStats,
+    hasUserRatedRide
   };
 };
 

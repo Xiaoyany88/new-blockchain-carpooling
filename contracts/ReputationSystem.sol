@@ -4,20 +4,20 @@ pragma solidity ^0.8.18;
 contract ReputationSystem {
     // Structure to keep track of a user's reputation
     struct Reputation {
-        uint256 totalRating;
-        uint256 ratingCount;
+        uint256 totalRating;   // Sum of all ratings received
+        uint256 ratingCount;   // Number of ratings received
     }
 
     struct DriverReputation {
-        uint256 totalRating;
-        uint256 ratingCount;
-        uint256 completedRides;
-        uint256 cancelledRides;
+        uint256 totalRating;   // Sum of all ratings received
+        uint256 ratingCount;   // Number of ratings received
+        uint256 completedRides;  // Count of successfully completed rides
+        uint256 cancelledRides;  // Count of rides the driver cancelled
     }
 
-    mapping(address => Reputation) public reputations;
-    mapping(address => DriverReputation) public driverReputations;
-    mapping(uint256 => mapping(address => bool)) public hasRated;
+    mapping(address => Reputation) public reputations;  // General user reputation
+    mapping(address => DriverReputation) public driverReputations;  // Driver-specific reputation
+    mapping(uint256 => mapping(address => bool)) public hasRated;  // Tracks if user rated a specific ride
 
     // Event to log rating submissions
     event Rated(address indexed user, uint8 rating, uint256 newTotalRating, uint256 newRatingCount);

@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useCallback } from 'react';
 import { 
   Container, 
   Typography, 
@@ -14,11 +14,15 @@ import {
   DialogTitle,
   DialogContent,
   DialogActions,
-  TextField
+  TextField,
+  Rating as MuiRating
 } from '@mui/material';
 import useProvider from '../hooks/useProvider';
 import useRideOffer from '../hooks/useRideOffer';
 import useReputationSystem from '../hooks/useReputationSystem';
+import useCarpoolSystem from '../hooks/useCarpoolSystem';
+import { ethers } from 'ethers';
+import { formatAddress } from '../utils/addressFormatter';
 
 interface TabPanelProps {
   children?: React.ReactNode;
@@ -42,7 +46,7 @@ function TabPanel(props: TabPanelProps) {
   );
 }
 
-// Update the BookedRide interface to include the hasRated property
+// Updated BookedRide interface to match contract structure
 interface BookedRide {
   id: number;
   pickup: string;
@@ -52,10 +56,10 @@ interface BookedRide {
   pricePerSeat: string;
   status: string;
   seats: number;
-  hasRated?: boolean; // Add this optional property
+  hasRated: boolean;
+  isActive: boolean;
 }
 
-// Add this interface just before the component
 interface MyRidesProps {
   initialTab?: number;
   showTabs?: boolean;
@@ -64,7 +68,6 @@ interface MyRidesProps {
   refreshTrigger?: number;
 }
 
-// Update the component definition
 const MyRides: React.FC<MyRidesProps> = ({ 
   initialTab = 0, 
   showTabs = true,
@@ -72,7 +75,6 @@ const MyRides: React.FC<MyRidesProps> = ({
   showTitle = true,
   refreshTrigger = 0
 }) => {
-  // Update the initial tab state to use the prop
   const [tabValue, setTabValue] = useState(initialTab);
   const [upcomingRides, setUpcomingRides] = useState<BookedRide[]>([]);
   const [pastRides, setPastRides] = useState<BookedRide[]>([]);
@@ -81,63 +83,116 @@ const MyRides: React.FC<MyRidesProps> = ({
   const [selectedRide, setSelectedRide] = useState<BookedRide | null>(null);
   const [rating, setRating] = useState<number>(5);
   const [isSubmittingRating, setIsSubmittingRating] = useState(false);
+  const [isLoading, setIsLoading] = useState(false);
 
   const provider = useProvider();
-  const { getRide } = useRideOffer(provider);
+  const { getRide, getUserBookings, hasUserRatedRide } = useRideOffer(provider);
   const { rateDriver } = useReputationSystem(provider);
+  const { cancelRide: cancelRideFunction } = useCarpoolSystem();
 
-  // This would need to be integrated with your backend/blockchain
-  // to retrieve the user's actual booked rides
-  const loadMyRides = async () => {
-    // In a real implementation, you would fetch the user's booked rides
-    // from your smart contract or backend
+  // Wrap loadMyRides with useCallback
+  const loadMyRides = useCallback(async () => {
+    if (isLoading) return; // Prevent concurrent fetches
+
     setLoading(true);
+    console.log("loadMyRides called at:", new Date().toISOString());
     
     try {
-      // For demo purposes, we're using mock data
-      // Replace this with your actual data fetching logic
+      if (!getRide || !provider) {
+        console.error("Contract functions not available");
+        setLoading(false);
+        return;
+      }
+  
+      // Get the current user's bookings
+      const bookingIds = await getUserBookings();
       
-      // Mock data for example
-      const mockUpcoming = [
-        {
-          id: 1,
-          pickup: "Downtown",
-          destination: "Airport",
-          departureTime: new Date(Date.now() + 86400000), // tomorrow
-          driver: "0x1234567890123456789012345678901234567890",
-          pricePerSeat: "0.05",
-          status: "Confirmed",
-          seats: 1
-        },
-        // More mock rides...
-      ];
+      if (!bookingIds || bookingIds.length === 0) {
+        console.log("No bookings found for user");
+        setUpcomingRides([]);
+        setPastRides([]);
+        setLoading(false);
+        return;
+      }
+  
+      // Get full details for each booking
+      const ridePromises = bookingIds.map(async (id: number) => {
+        try {
+          // Get the basic ride details from the contract
+          const rideData = await getRide(id);
+          
+          if (!rideData) {
+            console.log(`No ride data found for ID: ${id}`);
+            return null;
+          }
+          
+          // Check if user has rated this ride
+          const hasRated = await hasUserRatedRide(id);
+          
+          // Determine if ride is in the past
+          const currentTime = Math.floor(Date.now() / 1000);
+          const isPastRide = Number(rideData.departureTime) < currentTime;
+          
+          // Determine ride status based on contract data
+          let status = "Confirmed";
+          
+          if (!rideData.isActive && isPastRide) {
+            status = "Completed";
+          } else if (rideData.isActive && isPastRide) {
+            status = "Missed";
+          } else if (!rideData.isActive && !isPastRide) {
+            status = "Cancelled";
+          } else if (rideData.isActive && !isPastRide) {
+            if (currentTime > Number(rideData.departureTime) - 3600) { // Within 1 hour of departure
+              status = "In Progress";
+            } else {
+              status = "Confirmed";
+            }
+          }
+          
+          return {
+            id: id,
+            pickup: rideData.pickup,
+            destination: rideData.destination,
+            departureTime: new Date(rideData.departureTime * 1000),
+            driver: rideData.driver,
+            pricePerSeat: rideData.pricePerSeat,
+            status: status,
+            seats: 1, // Default to 1 since we can't get exact booking seat count
+            hasRated: hasRated,
+            isActive: rideData.isActive
+          };
+        } catch (error) {
+          console.error(`Error processing ride ID ${id}:`, error);
+          return null;
+        }
+      });
+  
+      const rides = (await Promise.all(ridePromises)).filter(Boolean) as BookedRide[];
       
-      const mockPast = [
-        {
-          id: 2,
-          pickup: "Mall",
-          destination: "University",
-          departureTime: new Date(Date.now() - 86400000), // yesterday
-          driver: "0x0987654321098765432109876543210987654321",
-          pricePerSeat: "0.03",
-          status: "Completed",
-          seats: 1
-        },
-        // More mock rides...
-      ];
+      // Split rides into upcoming and past
+      const upcoming = rides.filter(ride => 
+        ride.status === "Confirmed" || ride.status === "In Progress"
+      );
       
-      setUpcomingRides(mockUpcoming);
-      setPastRides(mockPast);
+      const past = rides.filter(ride => 
+        ride.status === "Completed" || ride.status === "Cancelled" || ride.status === "Missed"
+      );
+      
+      setUpcomingRides(upcoming);
+      setPastRides(past);
     } catch (error) {
       console.error("Error loading rides:", error);
     } finally {
-      setLoading(false);
+      setIsLoading(false);
     }
-  };
+  }, [provider?.getSigner().getAddress, getRide, getUserBookings, hasUserRatedRide]);
 
   useEffect(() => {
-    loadMyRides();
-  }, []);
+    if (provider) {
+      loadMyRides();
+    }
+  }, [provider, loadMyRides, refreshTrigger]);
 
   const handleTabChange = (event: React.SyntheticEvent, newValue: number) => {
     setTabValue(newValue);
@@ -149,203 +204,195 @@ const MyRides: React.FC<MyRidesProps> = ({
   };
 
   const handleSubmitRating = async () => {
-    if (!rateDriver || !selectedRide) return;
+    if (!selectedRide) return;
     
     setIsSubmittingRating(true);
     try {
       await rateDriver(selectedRide.driver, rating, selectedRide.id);
-      // Update the UI to show the driver has been rated
+      
+      // Update the ride in our local state to show it's been rated
       const updatedPastRides = pastRides.map(ride => 
         ride.id === selectedRide.id ? { ...ride, hasRated: true } : ride
       );
       setPastRides(updatedPastRides);
+      
       setRatingDialogOpen(false);
     } catch (error) {
-      console.error("Error rating driver:", error);
+      console.error("Error submitting rating:", error);
     } finally {
       setIsSubmittingRating(false);
     }
   };
 
-  const cancelRide = async (rideId: number) => {
-    // In a real implementation, call your smart contract to cancel the ride
-    console.log(`Cancelling ride ${rideId}`);
-    // After successful cancellation, refresh the rides list
-    loadMyRides();
-  };
-
-  const getRideStatusChip = (status: string) => {
-    let color: "default" | "primary" | "secondary" | "error" | "info" | "success" | "warning" = "default";
-    
-    switch(status) {
-      case "Confirmed":
-        color = "primary";
-        break;
-      case "Completed":
-        color = "success";
-        break;
-      case "Cancelled":
-        color = "error";
-        break;
-      case "In Progress":
-        color = "info";
-        break;
+  const handleCancelRide = async (rideId: number) => {
+    try {
+      await cancelRideFunction(rideId.toString());
+      loadMyRides(); // Reload rides after cancellation
+    } catch (error) {
+      console.error("Error canceling ride:", error);
     }
-    
-    return <Chip label={status} color={color} size="small" />;
   };
 
-  if (loading) {
+  const renderRideCard = (ride: BookedRide) => {
+    const isPast = ride.status === "Completed" || ride.status === "Cancelled" || ride.status === "Missed";
+    
     return (
-      <Container sx={{ mt: 4, display: 'flex', justifyContent: 'center' }}>
-        <CircularProgress />
-      </Container>
+      <Paper key={ride.id} sx={{ mb: 2, p: 2 }}>
+        <Grid container spacing={2}>
+          <Grid item xs={12}>
+            <Typography variant="h6">
+              {ride.pickup} → {ride.destination}
+            </Typography>
+            <Typography variant="body1" color="textSecondary">
+              {ride.departureTime.toLocaleString()}
+            </Typography>
+          </Grid>
+          
+          <Grid item xs={12} sm={6}>
+            <Typography variant="body2">
+              <strong>Driver:</strong> {formatAddress(ride.driver)}
+            </Typography>
+            <Typography variant="body2">
+              <strong>Price:</strong> {ride.pricePerSeat} ETH
+            </Typography>
+          </Grid>
+          
+          <Grid item xs={12} sm={6}>
+            <Box sx={{ display: 'flex', justifyContent: 'flex-end', alignItems: 'center' }}>
+              <Chip 
+                label={ride.status} 
+                color={
+                  ride.status === "Completed" ? "success" : 
+                  ride.status === "Confirmed" ? "primary" :
+                  ride.status === "In Progress" ? "secondary" :
+                  "default"
+                }
+                sx={{ mr: 1 }}
+              />
+              
+              {ride.status === "Confirmed" && (
+                <Button 
+                  variant="outlined" 
+                  color="error" 
+                  size="small"
+                  onClick={() => handleCancelRide(ride.id)}
+                >
+                  Cancel
+                </Button>
+              )}
+              
+              {isPast && ride.status === "Completed" && !ride.hasRated && (
+                <Button 
+                  variant="outlined" 
+                  color="primary" 
+                  size="small"
+                  onClick={() => handleRateDriver(ride)}
+                >
+                  Rate Driver
+                </Button>
+              )}
+              
+              {isPast && ride.hasRated && (
+                <Chip label="Rated" color="success" size="small" />
+              )}
+            </Box>
+          </Grid>
+        </Grid>
+      </Paper>
     );
-  }
+  };
 
-  // Use the props to conditionally render different parts of the UI
+  const renderContent = () => {
+    if (loading) {
+      return (
+        <Box sx={{ display: 'flex', justifyContent: 'center', my: 4 }}>
+          <CircularProgress />
+        </Box>
+      );
+    }
+
+    if ((showOnly === 'upcoming' || tabValue === 0) && upcomingRides.length === 0) {
+      return (
+        <Typography variant="body1" sx={{ textAlign: 'center', my: 4 }}>
+          You don't have any upcoming rides.
+        </Typography>
+      );
+    }
+
+    if ((showOnly === 'past' || tabValue === 1) && pastRides.length === 0) {
+      return (
+        <Typography variant="body1" sx={{ textAlign: 'center', my: 4 }}>
+          You don't have any past rides.
+        </Typography>
+      );
+    }
+
+    return (
+      <>
+        {(!showOnly || showOnly === 'upcoming') && (tabValue === 0 || !showTabs) && (
+          <>
+            {upcomingRides.map((ride, index) => (
+              <React.Fragment key={`${ride.id}-${index}`}>
+                {renderRideCard(ride)}
+              </React.Fragment>
+            ))}
+          </>
+        )}
+        
+        {(!showOnly || showOnly === 'past') && (tabValue === 1 || !showTabs) && (
+          <>
+            {pastRides.map((ride, index) => (
+              <React.Fragment key={`${ride.id}-${index}`}>
+                {renderRideCard(ride)}
+              </React.Fragment>
+            ))}
+          </>
+        )}
+      </>
+    );
+  };
+
   return (
-    <Container sx={{ mt: showTitle ? 4 : 0 }}>
+    <Container>
       {showTitle && (
         <Typography variant="h4" gutterBottom>
           My Rides
         </Typography>
       )}
-      
+
       {showTabs && (
-        <Box sx={{ borderBottom: 1, borderColor: 'divider' }}>
-          <Tabs value={tabValue} onChange={handleTabChange}>
+        <Box sx={{ borderBottom: 1, borderColor: 'divider', mb: 2 }}>
+          <Tabs value={tabValue} onChange={handleTabChange} aria-label="ride history tabs">
             <Tab label="Upcoming" />
-            <Tab label="Past Rides" />
+            <Tab label="History" />
           </Tabs>
         </Box>
       )}
-      
-      {/* Conditionally render based on showOnly and tab value */}
-      {(!showOnly || showOnly === 'upcoming') && (showTabs ? tabValue === 0 : true) && (
-        <Box sx={{ p: showTabs ? 3 : 0 }}>
-          {upcomingRides.length === 0 ? (
-            <Typography>No upcoming rides found.</Typography>
-          ) : (
-            upcomingRides.map((ride) => (
-              <Paper key={ride.id} sx={{ p: 3, mb: 2 }}>
-                <Grid container spacing={2}>
-                  <Grid item xs={12} md={8}>
-                    <Typography variant="h6">
-                      {ride.pickup} to {ride.destination}
-                    </Typography>
-                    <Typography color="textSecondary">
-                      {ride.departureTime.toLocaleString()}
-                    </Typography>
-                    <Typography>
-                      Driver: {ride.driver.substring(0, 6)}...{ride.driver.substring(38)}
-                    </Typography>
-                    <Typography>
-                      Price: {ride.pricePerSeat} ETH × {ride.seats} seat(s)
-                    </Typography>
-                  </Grid>
-                  <Grid item xs={12} md={4} sx={{ display: 'flex', flexDirection: 'column', justifyContent: 'space-between' }}>
-                    <Box sx={{ display: 'flex', justifyContent: 'flex-end' }}>
-                      {getRideStatusChip(ride.status)}
-                    </Box>
-                    <Box sx={{ display: 'flex', justifyContent: 'flex-end', mt: 2 }}>
-                      <Button 
-                        variant="outlined" 
-                        color="error" 
-                        onClick={() => cancelRide(ride.id)}
-                        disabled={ride.status === "In Progress"}
-                      >
-                        Cancel Ride
-                      </Button>
-                    </Box>
-                  </Grid>
-                </Grid>
-              </Paper>
-            ))
-          )}
-        </Box>
-      )}
-      
-      {(!showOnly || showOnly === 'past') && (showTabs ? tabValue === 1 : true) && (
-        <Box sx={{ p: showTabs ? 3 : 0 }}>
-          {pastRides.length === 0 ? (
-            <Typography>No past rides found.</Typography>
-          ) : (
-            pastRides.map((ride) => (
-              <Paper key={ride.id} sx={{ p: 3, mb: 2 }}>
-                <Grid container spacing={2}>
-                  <Grid item xs={12} md={8}>
-                    <Typography variant="h6">
-                      {ride.pickup} to {ride.destination}
-                    </Typography>
-                    <Typography color="textSecondary">
-                      {ride.departureTime.toLocaleString()}
-                    </Typography>
-                    <Typography>
-                      Driver: {ride.driver.substring(0, 6)}...{ride.driver.substring(38)}
-                    </Typography>
-                    <Typography>
-                      Price: {ride.pricePerSeat} ETH × {ride.seats} seat(s)
-                    </Typography>
-                  </Grid>
-                  <Grid item xs={12} md={4} sx={{ display: 'flex', flexDirection: 'column', justifyContent: 'space-between' }}>
-                    <Box sx={{ display: 'flex', justifyContent: 'flex-end' }}>
-                      {getRideStatusChip(ride.status)}
-                    </Box>
-                    {ride.status === "Completed" && ride.hasRated !== true && (
-                      <Box sx={{ display: 'flex', justifyContent: 'flex-end', mt: 2 }}>
-                        <Button 
-                          variant="contained" 
-                          onClick={() => handleRateDriver(ride)}
-                        >
-                          Rate Driver
-                        </Button>
-                      </Box>
-                    )}
-                    {ride.hasRated === true && (
-                      <Typography variant="body2" align="right" sx={{ mt: 2 }}>
-                        Driver rated ✓
-                      </Typography>
-                    )}
-                  </Grid>
-                </Grid>
-              </Paper>
-            ))
-          )}
-        </Box>
-      )}
 
-      {/* Rating Dialog */}
-      <Dialog open={ratingDialogOpen} onClose={() => !isSubmittingRating && setRatingDialogOpen(false)}>
+      {renderContent()}
+
+      <Dialog open={ratingDialogOpen} onClose={() => setRatingDialogOpen(false)}>
         <DialogTitle>Rate your driver</DialogTitle>
         <DialogContent>
-          <Typography gutterBottom>
-            How was your experience with this driver?
-          </Typography>
-          <Box sx={{ display: 'flex', alignItems: 'center', mt: 2 }}>
-            <Typography sx={{ mr: 2 }}>Rating:</Typography>
-            <TextField
-              type="number"
-              variant="outlined"
+          <Box sx={{ my: 2, display: 'flex', flexDirection: 'column', alignItems: 'center' }}>
+            <Typography component="legend">Rating</Typography>
+            <MuiRating
+              name="driver-rating"
               value={rating}
-              onChange={(e) => setRating(Math.max(1, Math.min(5, parseInt(e.target.value) || 1)))}
-              InputProps={{ inputProps: { min: 1, max: 5 } }}
-              size="small"
-              sx={{ width: 80 }}
+              onChange={(event, newValue) => setRating(newValue || 5)}
+              size="large"
             />
-            <Typography sx={{ ml: 1 }}>/ 5</Typography>
           </Box>
         </DialogContent>
         <DialogActions>
-          <Button onClick={() => setRatingDialogOpen(false)} disabled={isSubmittingRating}>
-            Cancel
-          </Button>
+          <Button onClick={() => setRatingDialogOpen(false)}>Cancel</Button>
           <Button 
             onClick={handleSubmitRating} 
-            variant="contained" 
             disabled={isSubmittingRating}
+            variant="contained" 
+            color="primary"
           >
-            {isSubmittingRating ? <CircularProgress size={24} /> : 'Submit Rating'}
+            {isSubmittingRating ? <CircularProgress size={24} /> : "Submit"}
           </Button>
         </DialogActions>
       </Dialog>

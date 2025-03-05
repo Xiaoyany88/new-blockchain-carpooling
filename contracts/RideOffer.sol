@@ -30,7 +30,9 @@ contract RideOffer {
         bool exists;
     }
 
+    // links a unique identifier to a Ride struct
     mapping(uint256 => Ride) public rides;
+    // link a unique identifier to a list of Booking structs
     mapping(uint256 => Booking[]) public bookings;
     
     // New mappings for user functionality

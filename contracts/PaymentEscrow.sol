@@ -3,12 +3,12 @@ pragma solidity ^0.8.18;
 
 contract PaymentEscrow {
     struct Payment {
-        uint256 rideId;
-        address payable passenger;
-        uint256 amount;
-        uint256 seats;
-        bool released;
-        bool refunded;
+        uint256 rideId;             // Identifies which ride this payment is for
+        address payable passenger;  // Who made the payment (payable for refunds)
+        uint256 amount;             // How much ETH was paid
+        uint256 seats;              // Number of seats booked
+        bool released;              // Whether payment was sent to driver
+        bool refunded;              // Whether payment was returned to passenger
     }
 
     mapping(uint256 => mapping(address => Payment)) public payments;

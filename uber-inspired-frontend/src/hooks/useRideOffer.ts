@@ -1,4 +1,4 @@
-import { useEffect, useState } from "react";
+import { useEffect, useState,useCallback } from "react";
 import { ethers } from "ethers";
 import RideOfferABI from "../abis/RideOffer.json";
 import { CONTRACT_ADDRESSES } from "../config/contracts";
@@ -82,7 +82,7 @@ const useRideOffer = (provider: ethers.providers.Web3Provider | null) => {
     }
   };
 
-  const getRide = async (rideId: number) => {
+  const getRide = useCallback(async (rideId: number) => {
     if (!contract) return null;
     try {
       const rideData = await contract.getRide(rideId);
@@ -101,7 +101,7 @@ const useRideOffer = (provider: ethers.providers.Web3Provider | null) => {
       console.error("Error getting ride:", error);
       throw error;
     }
-  };
+  }, [contract]);
 
   const getAvailableRides = async () => {
     if (!contract) return null;
@@ -114,7 +114,7 @@ const useRideOffer = (provider: ethers.providers.Web3Provider | null) => {
     }
   };
 
-  const getUserBookings = async () => {
+  const getUserBookings = useCallback(async () => {
     if (!contract || !provider) return [];
     
     try {
@@ -133,6 +133,44 @@ const useRideOffer = (provider: ethers.providers.Web3Provider | null) => {
       console.error("Error fetching user bookings:", error);
       return [];
     }
+  }, [contract, provider]);
+
+  const getBookingDetails = async (rideId: number) => {
+    if (!contract || !provider) return null;
+    
+    try {
+      const signer = provider.getSigner();
+      const userAddress = await signer.getAddress();
+      
+      // This assumes your contract has a function to get booking details for a specific user and ride
+      // You might need to adjust based on your actual contract implementation
+      const bookingData = await contract.getBookingDetails(rideId, userAddress);
+      
+      return {
+        passenger: bookingData.passenger || userAddress,
+        rideId,
+        seats: bookingData.seats ? bookingData.seats.toNumber() : 1,
+        completed: bookingData.completed || false
+      };
+    } catch (error) {
+      console.error("Error getting booking details:", error);
+      return null;
+    }
+  };
+
+  const hasUserRatedRide = async (rideId: number) => {
+    if (!contract || !provider) return false;
+    
+    try {
+      const signer = provider.getSigner();
+      const userAddress = await signer.getAddress();
+      
+      const hasRated = await contract.hasUserRatedRide(userAddress, rideId);
+      return hasRated;
+    } catch (error) {
+      console.error("Error checking if user rated ride:", error);
+      return false;
+    }
   };
 
   return {
@@ -143,7 +181,10 @@ const useRideOffer = (provider: ethers.providers.Web3Provider | null) => {
     completeRide,
     getRide,
     getAvailableRides,
-    getUserBookings
+    getUserBookings,
+    //newly added
+    getBookingDetails,
+    hasUserRatedRide
   };
 };
 
