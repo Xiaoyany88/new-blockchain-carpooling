@@ -135,29 +135,6 @@ const useRideOffer = (provider: ethers.providers.Web3Provider | null) => {
     }
   }, [contract, provider]);
 
-  const getBookingDetails = async (rideId: number) => {
-    if (!contract || !provider) return null;
-    
-    try {
-      const signer = provider.getSigner();
-      const userAddress = await signer.getAddress();
-      
-      // This assumes your contract has a function to get booking details for a specific user and ride
-      // You might need to adjust based on your actual contract implementation
-      const bookingData = await contract.getBookingDetails(rideId, userAddress);
-      
-      return {
-        passenger: bookingData.passenger || userAddress,
-        rideId,
-        seats: bookingData.seats ? bookingData.seats.toNumber() : 1,
-        completed: bookingData.completed || false
-      };
-    } catch (error) {
-      console.error("Error getting booking details:", error);
-      return null;
-    }
-  };
-
   const hasUserRatedRide = async (rideId: number) => {
     if (!contract || !provider) return false;
     
@@ -183,7 +160,6 @@ const useRideOffer = (provider: ethers.providers.Web3Provider | null) => {
     getAvailableRides,
     getUserBookings,
     //newly added
-    getBookingDetails,
     hasUserRatedRide
   };
 };

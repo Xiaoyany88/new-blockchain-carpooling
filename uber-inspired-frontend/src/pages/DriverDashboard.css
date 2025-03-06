@@ -1,0 +1,70 @@
+.driver-dashboard {
+    max-width: 1000px;
+    margin: 40px auto;
+    padding: 0 20px;
+  }
+  
+  .wallet-prompt {
+    text-align: center;
+    margin-top: 100px;
+  }
+  
+  h1 {
+    font-size: 32px;
+    margin-bottom: 32px;
+    color: #333;
+  }
+  
+  h2 {
+    font-size: 28px;
+    margin-bottom: 16px;
+    color: #333;
+  }
+  
+  p {
+    color: #666;
+    font-size: 18px;
+  }
+  
+  .dashboard-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fill, minmax(300px, 1fr));
+    gap: 24px;
+  }
+  
+  .dashboard-card {
+    background-color: white;
+    border-radius: 10px;
+    box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
+    padding: 24px;
+    display: flex;
+    flex-direction: column;
+  }
+  
+  .dashboard-card h2 {
+    font-size: 22px;
+    margin-bottom: 12px;
+    color: #333;
+  }
+  
+  .dashboard-card p {
+    color: #666;
+    margin-bottom: 24px;
+    flex-grow: 1;
+  }
+  
+  .dashboard-btn {
+    background-color: #4F46E5;
+    color: white;
+    border: none;
+    padding: 10px 16px;
+    border-radius: 6px;
+    font-weight: 500;
+    cursor: pointer;
+    transition: background-color 0.2s;
+    align-self: flex-start;
+  }
+  
+  .dashboard-btn:hover {
+    background-color: #4338CA;
+  }

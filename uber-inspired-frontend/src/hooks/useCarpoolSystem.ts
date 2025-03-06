@@ -21,11 +21,11 @@ export const useCarpoolSystem = () => {
   const [isLoading, setIsLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
 
-   // Add network validation states
-   const [currentChainId, setCurrentChainId] = useState<number | null>(null);
-   const [isCorrectNetwork, setIsCorrectNetwork] = useState<boolean>(false);
+  // Network validation states
+  const [currentChainId, setCurrentChainId] = useState<number | null>(null);
+  const [isCorrectNetwork, setIsCorrectNetwork] = useState<boolean>(false);
 
-  // Add state for event notifications
+  // Event notifications state
   const [eventNotifications, setEventNotifications] = useState<Array<{
     type: string;
     data: any;
@@ -33,6 +33,7 @@ export const useCarpoolSystem = () => {
     read: boolean;
   }>>([]);
 
+  // Initialize contracts when component mounts
   useEffect(() => {
     const initContracts = async () => {
       try {
@@ -62,7 +63,6 @@ export const useCarpoolSystem = () => {
         }
         
         setIsCorrectNetwork(true);
-        
         const signer = provider.getSigner();
         
         // Initialize contracts with addresses from config
@@ -168,7 +168,7 @@ export const useCarpoolSystem = () => {
                 symbol: 'ETH',
                 decimals: 18
               },
-              rpcUrls: [process.env.SEPOLIA_RPC_URL, 'https://rpc.sepolia.org'],
+              rpcUrls: ['https://sepolia.infura.io/v3/', 'https://rpc.sepolia.org'],
               blockExplorerUrls: ['https://sepolia.etherscan.io']
             }]
           });
@@ -192,52 +192,13 @@ export const useCarpoolSystem = () => {
       try {
         // Validate CarpoolSystem contract methods
         if (carpoolSystemContract) {
-          const completeRideFunction = carpoolSystemContract.interface.getFunction('completeRide(uint256)');
-          const cancelRideFunction = carpoolSystemContract.interface.getFunction('cancelRide(uint256)');
-          const totalRidesFunction = carpoolSystemContract.interface.getFunction('totalRides()');
+          const bookRideFunction = carpoolSystemContract.interface.getFunction('bookRide(uint256,uint256)');
+          const completeRideFunction = carpoolSystemContract.interface.getFunction('completeRide(uint256,address)');
+          const rateDriverFunction = carpoolSystemContract.interface.getFunction('rateDriver(uint256,address,uint8)');
+          const getDriverInfoFunction = carpoolSystemContract.interface.getFunction('getDriverInfo(address)');
           
-          if (!completeRideFunction || !cancelRideFunction || !totalRidesFunction) {
+          if (!bookRideFunction || !completeRideFunction || !rateDriverFunction || !getDriverInfoFunction) {
             console.warn("Some expected CarpoolSystem functions are missing from the ABI");
-          }
-        }
-        
-        // Validate RideOffer contract methods
-        if (rideOfferContract) {
-          const createRideFunction = rideOfferContract.interface.getFunction('createRide(address,string,string,uint256,uint256,uint256)');
-          const bookRideFunction = rideOfferContract.interface.getFunction('bookRide(uint256)');
-          
-          if (!createRideFunction || !bookRideFunction) {
-            console.warn("Some expected RideOffer functions are missing from the ABI");
-          }
-        }
-        
-        // Validate ReputationSystem contract methods
-        if (reputationSystemContract) {
-          const rateUserFunction = reputationSystemContract.interface.getFunction('rateUser(address,uint8)');
-          const getAverageRatingFunction = reputationSystemContract.interface.getFunction('getAverageRating(address)');
-          
-          if (!rateUserFunction || !getAverageRatingFunction) {
-            console.warn("Some expected ReputationSystem functions are missing from the ABI");
-          }
-        }
-        
-        // Validate PaymentEscrow contract methods
-        if (paymentEscrowContract) {
-          const escrowPaymentFunction = paymentEscrowContract.interface.getFunction('escrowPayment(uint256)');
-          const releasePaymentFunction = paymentEscrowContract.interface.getFunction('releasePayment(uint256)');
-          
-          if (!escrowPaymentFunction || !releasePaymentFunction) {
-            console.warn("Some expected PaymentEscrow functions are missing from the ABI");
-          }
-        }
-        
-        // Validate CarpoolToken contract methods
-        if (carpoolTokenContract) {
-          const balanceOfFunction = carpoolTokenContract.interface.getFunction('balanceOf(address)');
-          const rewardDriverFunction = carpoolTokenContract.interface.getFunction('rewardDriver(address,uint256)');
-          
-          if (!balanceOfFunction || !rewardDriverFunction) {
-            console.warn("Some expected CarpoolToken functions are missing from the ABI");
           }
         }
       } catch (err) {
@@ -246,30 +207,78 @@ export const useCarpoolSystem = () => {
     };
     
     validateContracts();
-  }, [
-    carpoolSystemContract, 
-    rideOfferContract, 
-    reputationSystemContract, 
-    paymentEscrowContract, 
-    carpoolTokenContract
-  ]);
+  }, [carpoolSystemContract]);
+
+  /**
+   * Book a ride and handle payment in one transaction
+   * @param rideId The ID of the ride to book
+   * @param seats Number of seats to book
+   * @param pricePerSeat Price per seat in ETH
+   */
+  const bookRide = async (rideId: number, seats: number, pricePerSeat: string) => {
+    try {
+      if (!carpoolSystemContract) {
+        throw new Error("CarpoolSystem contract not initialized");
+      }
+
+      const totalPrice = ethers.utils.parseEther(
+        (parseFloat(pricePerSeat) * seats).toString()
+      );
+
+      // Estimate gas for the transaction
+      const gasEstimate = await carpoolSystemContract.estimateGas.bookRide(
+        rideId, 
+        seats, 
+        { value: totalPrice }
+      );
+      const adjustedGasLimit = gasEstimate.mul(120).div(100); // Add 20% buffer
+
+      // Send transaction with gas limit and value
+      const tx = await carpoolSystemContract.bookRide(
+        rideId, 
+        seats, 
+        { 
+          value: totalPrice,
+          gasLimit: adjustedGasLimit 
+        }
+      );
+      
+      // Wait for transaction to be mined
+      const receipt = await tx.wait();
+      return { success: true, transaction: receipt };
+    } catch (err) {
+      console.error("Error booking ride:", err);
+      return { 
+        success: false, 
+        error: err instanceof Error ? err.message : "Failed to book ride" 
+      };
+    }
+  };
+
   /**
    * Complete a ride and release payment to the driver
+   * @param rideId The ID of the ride to complete
+   * @param passengerAddress The address of the passenger to complete ride for
    */
-  const completeRide = async (rideId: string) => {
+  const completeRide = async (rideId: number, passengerAddress: string) => {
     try {
       if (!carpoolSystemContract) {
         throw new Error("CarpoolSystem contract not initialized");
       }
 
       // Estimate gas for the transaction
-      const gasEstimate = await carpoolSystemContract.estimateGas.completeRide(rideId);
+      const gasEstimate = await carpoolSystemContract.estimateGas.completeRide(
+        rideId, 
+        passengerAddress
+      );
       const adjustedGasLimit = gasEstimate.mul(120).div(100); // Add 20% buffer
 
       // Send transaction with gas limit
-      const tx = await carpoolSystemContract.completeRide(rideId, {
-        gasLimit: adjustedGasLimit
-      });
+      const tx = await carpoolSystemContract.completeRide(
+        rideId, 
+        passengerAddress, 
+        { gasLimit: adjustedGasLimit }
+      );
       
       // Wait for transaction to be mined
       const receipt = await tx.wait();
@@ -284,84 +293,98 @@ export const useCarpoolSystem = () => {
   };
 
   /**
-   * Cancel a ride and refund the passenger
+   * Rate a driver after ride completion
+   * @param rideId The ID of the completed ride
+   * @param driverAddress The address of the driver to rate
+   * @param rating Rating from 1-5 stars
    */
-  const cancelRide = async (rideId: string) => {
+  const rateDriver = async (rideId: number, driverAddress: string, rating: number) => {
     try {
       if (!carpoolSystemContract) {
         throw new Error("CarpoolSystem contract not initialized");
       }
 
+      // Ensure rating is between 1-5
+      if (rating < 1 || rating > 5) {
+        throw new Error("Rating must be between 1 and 5");
+      }
+
       // Estimate gas for the transaction
-      const gasEstimate = await carpoolSystemContract.estimateGas.cancelRide(rideId);
+      const gasEstimate = await carpoolSystemContract.estimateGas.rateDriver(
+        rideId, 
+        driverAddress, 
+        rating
+      );
       const adjustedGasLimit = gasEstimate.mul(120).div(100); // Add 20% buffer
 
       // Send transaction with gas limit
-      const tx = await carpoolSystemContract.cancelRide(rideId, {
-        gasLimit: adjustedGasLimit
-      });
+      const tx = await carpoolSystemContract.rateDriver(
+        rideId, 
+        driverAddress, 
+        rating, 
+        { gasLimit: adjustedGasLimit }
+      );
       
       // Wait for transaction to be mined
       const receipt = await tx.wait();
       return { success: true, transaction: receipt };
     } catch (err) {
-      console.error("Error cancelling ride:", err);
+      console.error("Error rating driver:", err);
       return { 
         success: false, 
-        error: err instanceof Error ? err.message : "Failed to cancel ride" 
+        error: err instanceof Error ? err.message : "Failed to rate driver" 
       };
     }
   };
 
   /**
-   * Get system statistics
+   * Get driver's reputation information
+   * @param driverAddress The address of the driver
    */
-  const getSystemStats = async () => {
+  const getDriverInfo = async (driverAddress: string) => {
     try {
       if (!carpoolSystemContract) {
         throw new Error("CarpoolSystem contract not initialized");
       }
 
-      const totalRides = await carpoolSystemContract.totalRides();
-      const totalUsers = await carpoolSystemContract.totalUsers();
-      const totalTokensIssued = await carpoolSystemContract.totalTokensIssued();
+      const result = await carpoolSystemContract.getDriverInfo(driverAddress);
       
-      return {
-        success: true,
+      return { 
+        success: true, 
         data: {
-          totalRides: totalRides.toString(),
-          totalUsers: totalUsers.toString(),
-          totalTokensIssued: ethers.utils.formatUnits(totalTokensIssued, 18)
+          avgRating: result[0].toNumber(),
+          totalRides: result[1].toNumber(),
+          cancelledRides: result[2].toNumber()
         }
       };
     } catch (err) {
-      console.error("Error getting system stats:", err);
+      console.error("Error getting driver info:", err);
       return { 
         success: false, 
-        error: err instanceof Error ? err.message : "Failed to get system statistics" 
+        error: err instanceof Error ? err.message : "Failed to get driver information" 
       };
     }
   };
 
-  // Register event listeners for important contract events
+  // Register event listeners for contract events
   useEffect(() => {
     if (!carpoolSystemContract) return;
 
     const rideCompletedFilter = carpoolSystemContract.filters.RideCompleted();
     const rewardTokensIssuedFilter = carpoolSystemContract.filters.RewardTokensIssued();
+    const rideBookedFilter = carpoolSystemContract.filters.RideBooked();
+    const driverRatedFilter = carpoolSystemContract.filters.DriverRated();
     
     const handleRideCompleted = (
-      rideId: string, 
+      rideId: ethers.BigNumber, 
       driver: string, 
-      passenger: string, 
-      amount: ethers.BigNumber, 
+      passenger: string,
       event: ethers.Event
     ) => {
       const notificationData = { 
-        rideId, 
+        rideId: rideId.toString(), 
         driver, 
-        passenger, 
-        amount: ethers.utils.formatEther(amount) 
+        passenger
       };
       
       // Create a notification object
@@ -376,7 +399,6 @@ export const useCarpoolSystem = () => {
       setEventNotifications(prev => [notification, ...prev].slice(0, 10));
       
       console.log("Ride completed:", notificationData);
-      // You could dispatch an action or update state here
     };
     
     const handleRewardTokensIssued = (
@@ -403,12 +425,68 @@ export const useCarpoolSystem = () => {
       console.log("Tokens rewarded:", notificationData);
     };
 
+    const handleRideBooked = (
+      rideId: ethers.BigNumber,
+      passenger: string,
+      seats: ethers.BigNumber,
+      event: ethers.Event
+    ) => {
+      const notificationData = {
+        rideId: rideId.toString(),
+        passenger,
+        seats: seats.toString()
+      };
+      
+      // Create a notification object
+      const notification = {
+        type: 'RIDE_BOOKED',
+        data: notificationData,
+        timestamp: Date.now(),
+        read: false
+      };
+      
+      // Update notifications state
+      setEventNotifications(prev => [notification, ...prev].slice(0, 10));
+      
+      console.log("Ride booked:", notificationData);
+    };
+
+    const handleDriverRated = (
+      rideId: ethers.BigNumber,
+      driver: string,
+      rating: number,
+      event: ethers.Event
+    ) => {
+      const notificationData = {
+        rideId: rideId.toString(),
+        driver,
+        rating
+      };
+      
+      // Create a notification object
+      const notification = {
+        type: 'DRIVER_RATED',
+        data: notificationData,
+        timestamp: Date.now(),
+        read: false
+      };
+      
+      // Update notifications state
+      setEventNotifications(prev => [notification, ...prev].slice(0, 10));
+      
+      console.log("Driver rated:", notificationData);
+    };
+
     carpoolSystemContract.on(rideCompletedFilter, handleRideCompleted);
     carpoolSystemContract.on(rewardTokensIssuedFilter, handleRewardTokensIssued);
+    carpoolSystemContract.on(rideBookedFilter, handleRideBooked);
+    carpoolSystemContract.on(driverRatedFilter, handleDriverRated);
 
     return () => {
       carpoolSystemContract.off(rideCompletedFilter, handleRideCompleted);
       carpoolSystemContract.off(rewardTokensIssuedFilter, handleRewardTokensIssued);
+      carpoolSystemContract.off(rideBookedFilter, handleRideBooked);
+      carpoolSystemContract.off(driverRatedFilter, handleDriverRated);
     };
   }, [carpoolSystemContract]);
 
@@ -444,11 +522,12 @@ export const useCarpoolSystem = () => {
     currentChainId,
     isCorrectNetwork,
     switchToSepoliaNetwork,
-    // Existing functions
+    // Core contract functions (aligned with CarpoolSystem.sol)
+    bookRide,
     completeRide,
-    cancelRide,
-    getSystemStats,
-    // Add notification-related properties
+    rateDriver,
+    getDriverInfo,
+    // Notification management
     eventNotifications,
     markNotificationAsRead,
     clearAllNotifications
