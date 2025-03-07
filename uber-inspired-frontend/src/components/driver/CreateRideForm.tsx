@@ -1,7 +1,7 @@
 import { useState } from 'react';
 import useProvider from '../../hooks/useProvider';
 import useRideOffer from '../../hooks/useRideOffer';
-
+import './CreateRideForm.css';
 export const CreateRideForm = () => {
   const provider = useProvider();
   const { createRide } = useRideOffer(provider);

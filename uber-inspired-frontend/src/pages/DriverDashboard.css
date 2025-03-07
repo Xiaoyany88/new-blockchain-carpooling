@@ -68,3 +68,25 @@
   .dashboard-btn:hover {
     background-color: #4338CA;
   }
+
+
+  .form-container {
+    width: 100%;
+    margin-top: 20px;
+  }
+  
+  .back-button {
+    background-color: #6B7280;
+    color: white;
+    border: none;
+    padding: 8px 16px;
+    border-radius: 6px;
+    cursor: pointer;
+    margin-bottom: 20px;
+    display: inline-flex;
+    align-items: center;
+  }
+  
+  .back-button:hover {
+    background-color: #4B5563;
+  }

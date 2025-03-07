@@ -103,16 +103,17 @@ const useRideOffer = (provider: ethers.providers.Web3Provider | null) => {
     }
   }, [contract]);
 
-  const getAvailableRides = async () => {
-    if (!contract) return null;
+  // Use useCallback to memoize the function
+  const getAvailableRides = useCallback(async () => {
+    if (!contract) return [];
     try {
       const rideIds = await contract.getAvailableRides();
       return rideIds.map((id: ethers.BigNumber) => id.toNumber());
     } catch (error) {
       console.error("Error getting available rides:", error);
-      throw error;
+      return [];
     }
-  };
+  }, [contract]); // only recreate when contract changes
 
   const getUserBookings = useCallback(async () => {
     if (!contract || !provider) return [];
