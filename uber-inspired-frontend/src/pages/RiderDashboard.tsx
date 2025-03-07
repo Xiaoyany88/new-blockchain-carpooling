@@ -8,6 +8,21 @@ export const RiderDashboard = () => {
   const provider = useProvider();
   const [isConnected, setIsConnected] = useState(false);
   const [showSearch, setShowSearch] = useState(false);
+
+  // Add state for search filters
+  const [searchFilters, setSearchFilters] = useState({
+    pickup: '',
+    destination: '',
+    date: ''
+  });
+  // Handler for input changes
+  const handleFilterChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const { id, value } = e.target;
+    setSearchFilters(prev => ({
+      ...prev,
+      [id]: value
+    }));
+  };
   
   useEffect(() => {
     const checkConnection = async () => {
@@ -43,7 +58,8 @@ export const RiderDashboard = () => {
           >
             ← Back to Dashboard
           </button>
-          <RideSearchResults />
+          {/* Pass filters to the RideSearchResults component */}
+          <RideSearchResults filters={searchFilters}/>
         </>
       ) : (
         <>
@@ -52,17 +68,34 @@ export const RiderDashboard = () => {
             <div className="search-form">
               <div className="form-group">
                 <label htmlFor="pickup">Pickup Location</label>
-                <input type="text" id="pickup" placeholder="Enter pickup location" />
+                <input 
+                  type="text" 
+                  id="pickup" 
+                  placeholder="Enter pickup location" 
+                  value={searchFilters.pickup}
+                  onChange={handleFilterChange}
+                />
               </div>
               
               <div className="form-group">
                 <label htmlFor="destination">Destination</label>
-                <input type="text" id="destination" placeholder="Enter destination" />
+                <input 
+                  type="text" 
+                  id="destination" 
+                  placeholder="Enter destination" 
+                  value={searchFilters.destination}
+                  onChange={handleFilterChange}
+                />
               </div>
               
               <div className="form-group">
                 <label htmlFor="date">Date</label>
-                <input type="date" id="date" />
+                <input 
+                  type="date" 
+                  id="date" 
+                  value={searchFilters.date}
+                  onChange={handleFilterChange}
+                />
               </div>
               
               <button 

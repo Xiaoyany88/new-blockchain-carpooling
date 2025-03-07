@@ -1,5 +1,5 @@
 // src/components/rider/RideSearchResults.tsx
-import { useEffect, useState } from 'react';
+import { useEffect, useState, useMemo } from 'react';
 import useProvider from '../../hooks/useProvider';
 import useRideOffer from '../../hooks/useRideOffer';
 import { ethers } from 'ethers';
@@ -19,12 +19,49 @@ type Ride = {
   isActive: boolean;
 };
 
-export const RideSearchResults = () => {
+type SearchFilters = {
+  pickup: string;
+  destination: string;
+  date: string;
+};
+
+export const RideSearchResults = ({ filters }: { filters?: SearchFilters }) => {
   const provider = useProvider();
   const { getAvailableRides, getRide } = useRideOffer(provider);
-  const [rides, setRides] = useState<Ride[]>([]);
+  const [allRides, setRides] = useState<Ride[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
+
+  // Apply filters to get filtered rides
+  const rides = useMemo(() => {
+    if (!filters || (!filters.pickup && !filters.destination && !filters.date)) {
+      // No filters applied, return all rides
+      return allRides;
+    }
+    
+    return allRides.filter(ride => {
+      // Case insensitive matching for text fields
+      const pickupMatch = !filters.pickup || 
+        ride.pickup.toLowerCase().includes(filters.pickup.toLowerCase());
+      
+      const destinationMatch = !filters.destination || 
+        ride.destination.toLowerCase().includes(filters.destination.toLowerCase());
+      
+      // Date matching - convert timestamps to dates for comparison
+      let dateMatch = true;
+      if (filters.date) {
+        const filterDate = new Date(filters.date);
+        filterDate.setHours(0, 0, 0, 0); // Start of the day
+        
+        const rideDate = new Date(ride.departureTime * 1000);
+        rideDate.setHours(0, 0, 0, 0); // Start of the day
+        
+        dateMatch = filterDate.getTime() === rideDate.getTime();
+      }
+      
+      return pickupMatch && destinationMatch && dateMatch;
+    });
+  }, [allRides, filters]);
   
   useEffect(() => {
     const loadRides = async () => {
@@ -79,12 +116,31 @@ export const RideSearchResults = () => {
   }
   
   if (rides.length === 0) {
-    return <div className="empty-message">No rides available at the moment.</div>;
+    // Show different messages based on whether filters are applied
+    return (
+      <div className="empty-message">
+        {filters && (filters.pickup || filters.destination || filters.date) ? 
+          "No rides found matching your search criteria." : 
+          "No rides available at the moment."}
+      </div>
+    );
   }
   
   return (
     <div className="ride-search-results">
-      <h2>Available Rides</h2>
+      {/* Show active filters if any */}
+      {filters && (filters.pickup || filters.destination || filters.date) && (
+        <div className="applied-filters">
+          <h3>Search results for:</h3>
+          <div className="filter-tags">
+            {filters.pickup && <span className="filter-tag">From: {filters.pickup}</span>}
+            {filters.destination && <span className="filter-tag">To: {filters.destination}</span>}
+            {filters.date && <span className="filter-tag">Date: {new Date(filters.date).toLocaleDateString()}</span>}
+          </div>
+        </div>
+      )}
+      
+      <h2>Available Rides {rides.length > 0 && `(${rides.length})`}</h2>
       <div className="rides-container">
         {rides.map(ride => (
           <RideCard key={ride.id} ride={ride} />
@@ -95,6 +151,7 @@ export const RideSearchResults = () => {
 };
 
 const RideCard = ({ ride }: { ride: Ride }) => {
+  // RideCard remains the same
   return (
     <div className="ride-card">
       <h3>{ride.pickup} to {ride.destination}</h3>
