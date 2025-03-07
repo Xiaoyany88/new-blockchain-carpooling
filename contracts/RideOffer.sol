@@ -40,6 +40,7 @@ contract RideOffer {
     mapping(address => mapping(uint256 => Rating)) private ratings; // Maps user -> rideId -> rating
     
     uint256 public rideCounter;
+    
 
     event RideCreated(uint256 indexed rideId, address indexed driver);
     event RideBooked(uint256 indexed rideId, address indexed passenger, uint256 seats);
