@@ -10,7 +10,7 @@ async function verifyContract(address: string, constructorArguments: any[] = [])
     await run("verify:verify", {
       address: address,
       constructorArguments: constructorArguments,
-      contract: constructorArguments.length === 0 ? undefined : undefined, // Add contract path if needed
+      contract: constructorArguments.length === 0 ? undefined : undefined, 
     });
     console.log("Contract verified successfully");
   } catch (error: any) {
@@ -23,44 +23,36 @@ async function verifyContract(address: string, constructorArguments: any[] = [])
 }
 
 async function main() {
-  // Skip verification on local network
   const isLocalNetwork = network.name === "hardhat" || network.name === "localhost";
   
-  console.log("Deploying Carpool System contracts...");
+  console.log("Deploying Carpool System contracts with circular dependency fix...");
 
-  // Deploy RideOffer
-  const RideOffer = await ethers.getContractFactory("RideOffer");
-  const rideOffer = await RideOffer.deploy();
-  await rideOffer.waitForDeployment();
-  console.log("RideOffer deployed to:", await rideOffer.getAddress());
-
-  // Deploy ReputationSystem
+  // Step 1: Deploy supporting contracts first
   const ReputationSystem = await ethers.getContractFactory("ReputationSystem");
   const reputationSystem = await ReputationSystem.deploy();
   await reputationSystem.waitForDeployment();
   console.log("ReputationSystem deployed to:", await reputationSystem.getAddress());
 
-  // Deploy PaymentEscrow
   const PaymentEscrow = await ethers.getContractFactory("PaymentEscrow");
   const paymentEscrow = await PaymentEscrow.deploy();
   await paymentEscrow.waitForDeployment();
   console.log("PaymentEscrow deployed to:", await paymentEscrow.getAddress());
 
-  // Deploy CarpoolToken
   const CarpoolToken = await ethers.getContractFactory("CarpoolToken");
   const carpoolToken = await CarpoolToken.deploy();
   await carpoolToken.waitForDeployment();
   console.log("CarpoolToken deployed to:", await carpoolToken.getAddress());
 
-  // Store constructor arguments for CarpoolSystem
+  // Step 2: Deploy CarpoolSystem with a placeholder address for RideOffer
+  const placeholderAddress = "0x0000000000000000000000000000000000000001";
+  
   const carpoolSystemArgs = [
-    await rideOffer.getAddress(),
+    placeholderAddress, // Temporary placeholder for RideOffer
     await reputationSystem.getAddress(),
     await paymentEscrow.getAddress(),
     await carpoolToken.getAddress(),
   ];
 
-  // Deploy CarpoolSystem
   const CarpoolSystem = await ethers.getContractFactory("CarpoolSystem");
   const carpoolSystem = await CarpoolSystem.deploy(
     carpoolSystemArgs[0],
@@ -69,22 +61,44 @@ async function main() {
     carpoolSystemArgs[3]
   );
   await carpoolSystem.waitForDeployment();
-  console.log("CarpoolSystem deployed to:", await carpoolSystem.getAddress());
+  const carpoolSystemAddress = await carpoolSystem.getAddress();
+  console.log("CarpoolSystem deployed to:", carpoolSystemAddress);
 
-  // Update verification section
+  // Step 3: Deploy RideOffer with CarpoolSystem's address
+  const RideOffer = await ethers.getContractFactory("RideOffer");
+  const rideOffer = await RideOffer.deploy(carpoolSystemAddress as unknown as any);
+  await rideOffer.waitForDeployment();
+  const rideOfferAddress = await rideOffer.getAddress();
+  console.log("RideOffer deployed to:", rideOfferAddress);
+
+  // Step 4: Update CarpoolSystem with the real RideOffer address
+  console.log("Updating RideOffer address in CarpoolSystem...");
+  const signer = (await ethers.getSigners())[0];
+  const updateTx = await signer.sendTransaction({
+    to: carpoolSystemAddress,
+    data: new ethers.Interface([
+      "function updateRideOfferAddress(address _newRideOffer)"
+    ]).encodeFunctionData("updateRideOfferAddress", [rideOfferAddress])
+  });
+  
+  await updateTx.wait();
+  console.log("Updated RideOffer address in CarpoolSystem");
+
+  // Verification
   if (!isLocalNetwork) {
     console.log("\nStarting verification process...");
     
-    // Verify contracts one by one with proper delays
-    await verifyContract(await rideOffer.getAddress());
     await verifyContract(await reputationSystem.getAddress());
     await verifyContract(await paymentEscrow.getAddress());
     await verifyContract(await carpoolToken.getAddress());
     
-    // For CarpoolSystem, specifically include the contract path
+    // For CarpoolSystem, use the original args with placeholder
+    await verifyContract(await carpoolSystem.getAddress(), carpoolSystemArgs);
+    
+    // For RideOffer, include CarpoolSystem address as constructor arg
     await verifyContract(
-      await carpoolSystem.getAddress(),
-      carpoolSystemArgs
+      await rideOffer.getAddress(),
+      [await carpoolSystem.getAddress()]
     );
   }
 

@@ -1,5 +1,16 @@
 [
   {
+    "inputs": [
+      {
+        "internalType": "address",
+        "name": "_carpoolSystem",
+        "type": "address"
+      }
+    ],
+    "stateMutability": "nonpayable",
+    "type": "constructor"
+  },
+  {
     "anonymous": false,
     "inputs": [
       {
@@ -122,6 +133,29 @@
     "inputs": [
       {
         "internalType": "uint256",
+        "name": "_rideId",
+        "type": "uint256"
+      },
+      {
+        "internalType": "uint256",
+        "name": "_seats",
+        "type": "uint256"
+      },
+      {
+        "internalType": "address",
+        "name": "passenger",
+        "type": "address"
+      }
+    ],
+    "name": "bookRideFromSystem",
+    "outputs": [],
+    "stateMutability": "nonpayable",
+    "type": "function"
+  },
+  {
+    "inputs": [
+      {
+        "internalType": "uint256",
         "name": "",
         "type": "uint256"
       },
@@ -173,6 +207,19 @@
     "name": "cancelRide",
     "outputs": [],
     "stateMutability": "nonpayable",
+    "type": "function"
+  },
+  {
+    "inputs": [],
+    "name": "carpoolSystem",
+    "outputs": [
+      {
+        "internalType": "address",
+        "name": "",
+        "type": "address"
+      }
+    ],
+    "stateMutability": "view",
     "type": "function"
   },
   {

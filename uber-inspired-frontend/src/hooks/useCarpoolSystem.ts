@@ -66,7 +66,7 @@ const useCarpoolSystem = (provider: ethers.providers.Web3Provider | null) => {
       // Call the bookRide function with transaction value
       const tx = await contract.bookRide(rideId, seats, {
         value: contractTotalWei,
-        gasLimit: 300000 // Set a reasonable gas limit
+        gasLimit: 600000 // Set a reasonable gas limit
       });
       console.log("Transaction sent:", tx.hash);
       // Wait for transaction to be confirmed

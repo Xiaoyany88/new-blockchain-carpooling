@@ -40,7 +40,10 @@ contract RideOffer {
     mapping(address => mapping(uint256 => Rating)) private ratings; // Maps user -> rideId -> rating
     
     uint256 public rideCounter;
-    
+    address public carpoolSystem;
+    constructor(address _carpoolSystem){
+        carpoolSystem = _carpoolSystem;
+    }
 
     event RideCreated(uint256 indexed rideId, address indexed driver);
     event RideBooked(uint256 indexed rideId, address indexed passenger, uint256 seats);
@@ -101,6 +104,36 @@ contract RideOffer {
 
         // THIS broadcasts the booking event to the blockchain
         emit RideBooked(_rideId, msg.sender, _seats);
+    }
+
+    function bookRideFromSystem(uint256 _rideId, uint256 _seats, address passenger) external {
+        // Only allow CarpoolSystem to call this
+        require(msg.sender == carpoolSystem, "Only CarpoolSystem can call");
+        
+        Ride storage ride = rides[_rideId];
+        require(ride.isActive, "Ride is not active");
+        require(ride.departureTime > block.timestamp, "Ride has already departed");
+        require(ride.availableSeats >= _seats, "Not enough seats available");
+        // No payment check needed - CarpoolSystem has already handled payment
+        
+        // Same logic as original bookRide but without payment check
+        ride.availableSeats -= _seats;
+        
+        // Rest of your booking logic... 
+        // Record the booking but use the passenger address provided by CarpoolSystem
+        bookings[_rideId].push(Booking({
+            passenger: passenger,  // Use passenger address from CarpoolSystem
+            rideId: _rideId,
+            seats: _seats,
+            paid: true,
+            completed: false
+        }));
+        
+        // Add this booking to the user's list of bookings
+        userBookings[passenger].push(_rideId);
+
+        // THIS broadcasts the booking event to the blockchain
+        emit RideBooked(_rideId, passenger, _seats);
     }
 
     function cancelRide(uint256 _rideId) external {

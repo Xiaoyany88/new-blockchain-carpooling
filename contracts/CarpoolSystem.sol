@@ -12,6 +12,9 @@ contract CarpoolSystem {
     PaymentEscrow public paymentEscrow;
     CarpoolToken public carpoolToken;
 
+    // Owner for admin functions
+    address public owner;
+
     // System-wide events
     event RideCompleted(uint256 indexed rideId, address indexed driver, address indexed passenger);
     event RideBooked(uint256 indexed rideId, address indexed passenger, uint256 seats);
@@ -24,10 +27,17 @@ contract CarpoolSystem {
         address _paymentEscrow,
         address _carpoolToken
     ) {
+        owner = msg.sender;
         rideOffer = RideOffer(_rideOffer);
         reputationSystem = ReputationSystem(_reputationSystem);
         paymentEscrow = PaymentEscrow(_paymentEscrow);
         carpoolToken = CarpoolToken(_carpoolToken);
+    }
+    
+    // Function to update RideOffer address (for circular dependency)
+    function updateRideOfferAddress(address _newRideOffer) external {
+        require(msg.sender == owner, "Only owner can update");
+        rideOffer = RideOffer(_newRideOffer);
     }
 
     /**
@@ -43,8 +53,8 @@ contract CarpoolSystem {
         // Handle payment through escrow
         paymentEscrow.escrowPayment{value: msg.value}(_rideId, _seats);
         
-        // Book the ride without sending value again
-        rideOffer.bookRide{value: 0}(_rideId, _seats);
+        // Call the special function that skips payment check
+        rideOffer.bookRideFromSystem(_rideId, _seats, msg.sender);
         
         emit RideBooked(_rideId, msg.sender, _seats);
     }
