@@ -99,9 +99,67 @@ const useCarpoolSystem = (provider: ethers.providers.Web3Provider | null) => {
   }, [contract]);
 
   // Additional functions like getMyBookings can go here
+  const getUserBookings = useCallback(async () => {
+    if (!contract || !provider) {
+      return { success: false, error: "Wallet not connected", bookings: [] };
+    }
+  
+    try {
+      const signer = provider.getSigner();
+      const userAddress = await signer.getAddress();
+      
+      // Get the RideOffer contract instance
+      const rideOfferAddress = await contract.rideOffer();
+      const rideOfferContract = new ethers.Contract(
+        rideOfferAddress,
+        RIDEOFFER_ABI,
+        signer
+      );
+      
+      // Get user's booking IDs
+      const bookingIds = await rideOfferContract.getUserBookings(userAddress);
+      console.log("User bookings IDs:", bookingIds);
+      
+      // Fetch detailed information for each booking
+      const bookingsPromises = bookingIds.map(async (rideId: number) => {
+        // Get the ride details
+        const ride = await rideOfferContract.rides(rideId);
+        
+        // Find this user's specific booking for this ride
+        // This assumes you have a function to get a specific booking
+        const bookingsForRide = await rideOfferContract.getBookingsByRide(rideId);
+        const userBooking = bookingsForRide.find((booking: any) => 
+          booking.passenger.toLowerCase() === userAddress.toLowerCase()
+        );
+        
+        return {
+          id: rideId,
+          driver: ride.driver,
+          pickup: ride.pickup,
+          destination: ride.destination,
+          departureTime: ride.departureTime.toNumber(),
+          pricePerSeat: ethers.utils.formatEther(ride.pricePerSeat),
+          bookedSeats: userBooking ? userBooking.seats.toNumber() : 0,
+          status: userBooking ? (userBooking.completed ? "Completed" : "Active") : "Unknown",
+          isPaid: userBooking ? userBooking.paid : false
+        };
+      });
+      
+      const bookings = await Promise.all(bookingsPromises);
+      return { success: true, bookings };
+    } catch (error: any) {
+      console.error("Error fetching user bookings:", error);
+      return { 
+        success: false, 
+        error: error.message || "Failed to fetch bookings",
+        bookings: [] 
+      };
+    }
+  }, [contract, provider]);
 
   return {
-    bookRide
+    bookRide,
+    getUserBookings
   };
 };
 

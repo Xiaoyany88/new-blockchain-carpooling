@@ -1,0 +1,130 @@
+.my-bookings {
+    width: 100%;
+    max-width: 1000px;
+    margin: 0 auto;
+  }
+  
+  .my-bookings h2 {
+    margin-bottom: 20px;
+    color: #333;
+  }
+  
+  .bookings-list {
+    display: flex;
+    flex-direction: column;
+    gap: 20px;
+  }
+  
+  .booking-card {
+    background-color: white;
+    border-radius: 10px;
+    box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
+    padding: 20px;
+    transition: transform 0.2s;
+  }
+  
+  .booking-card:hover {
+    transform: translateY(-5px);
+  }
+  
+  .booking-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    margin-bottom: 15px;
+    border-bottom: 1px solid #eee;
+    padding-bottom: 12px;
+  }
+  
+  .booking-header h3 {
+    margin: 0;
+    font-size: 18px;
+    color: #333;
+  }
+  
+  .booking-status {
+    padding: 4px 10px;
+    border-radius: 20px;
+    font-size: 14px;
+    font-weight: 600;
+  }
+  
+  .booking-status.active {
+    background-color: #D1FAE5;
+    color: #047857;
+  }
+  
+  .booking-status.completed {
+    background-color: #E0E7FF;
+    color: #4338CA;
+  }
+  
+  .booking-status.cancelled {
+    background-color: #FEE2E2;
+    color: #B91C1C;
+  }
+  
+  .booking-status.unknown {
+    background-color: #F3F4F6;
+    color: #6B7280;
+  }
+  
+  .booking-details {
+    margin-bottom: 15px;
+  }
+  
+  .booking-details p {
+    margin: 8px 0;
+    color: #4B5563;
+  }
+  
+  .booking-actions {
+    display: flex;
+    gap: 10px;
+    margin-top: 15px;
+  }
+  
+  .action-btn {
+    background-color: #F3F4F6;
+    color: #4B5563;
+    border: none;
+    padding: 8px 15px;
+    border-radius: 6px;
+    cursor: pointer;
+    font-size: 14px;
+    font-weight: 500;
+    transition: all 0.2s;
+  }
+  
+  .action-btn:hover {
+    background-color: #E5E7EB;
+  }
+  
+  .bookings-loading {
+    text-align: center;
+    padding: 40px 0;
+    color: #6B7280;
+    font-size: 18px;
+  }
+  
+  .bookings-error {
+    padding: 20px;
+    background-color: #FEE2E2;
+    color: #B91C1C;
+    border-radius: 8px;
+    margin: 20px 0;
+  }
+  
+  .no-bookings {
+    text-align: center;
+    padding: 40px 0;
+  }
+  
+  .no-bookings h2 {
+    margin-bottom: 10px;
+    color: #4B5563;
+  }
+  
+  .no-bookings p {
+    color: #6B7280;
+  }

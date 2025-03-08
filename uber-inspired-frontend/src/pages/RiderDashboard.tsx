@@ -2,12 +2,14 @@
 import { useEffect, useState } from 'react';
 import useProvider from '../hooks/useProvider';
 import { RideSearchResults } from '../components/rider/RideSearchResults';
+import { MyBookings } from '../components/rider/MyBookings';
 import './RiderDashboard.css';
 
 export const RiderDashboard = () => {
   const provider = useProvider();
   const [isConnected, setIsConnected] = useState(false);
   const [showSearch, setShowSearch] = useState(false);
+  const [showBookings, setShowBookings] = useState(false);
 
   // Add state for search filters
   const [searchFilters, setSearchFilters] = useState({
@@ -15,6 +17,7 @@ export const RiderDashboard = () => {
     destination: '',
     date: ''
   });
+  
   // Handler for input changes
   const handleFilterChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     const { id, value } = e.target;
@@ -46,6 +49,18 @@ export const RiderDashboard = () => {
     );
   }
   
+  // Handle showing bookings
+  const handleViewBookings = () => {
+    setShowBookings(true);
+    setShowSearch(false);
+  };
+  
+  // Handler to go back to dashboard
+  const handleBackToDashboard = () => {
+    setShowBookings(false);
+    setShowSearch(false);
+  };
+  
   return (
     <div className="rider-dashboard">
       <h1>Rider Dashboard</h1>
@@ -54,12 +69,21 @@ export const RiderDashboard = () => {
         <>
           <button 
             className="back-button"
-            onClick={() => setShowSearch(false)}
+            onClick={handleBackToDashboard}
           >
             ← Back to Dashboard
           </button>
-          {/* Pass filters to the RideSearchResults component */}
           <RideSearchResults filters={searchFilters}/>
+        </>
+      ) : showBookings ? (
+        <>
+          <button 
+            className="back-button"
+            onClick={handleBackToDashboard}
+          >
+            ← Back to Dashboard
+          </button>
+          <MyBookings />
         </>
       ) : (
         <>
@@ -111,7 +135,12 @@ export const RiderDashboard = () => {
             <div className="dashboard-card">
               <h2>Your Bookings</h2>
               <p>Manage your active and upcoming rides</p>
-              <button className="dashboard-btn">View Bookings</button>
+              <button 
+                className="dashboard-btn"
+                onClick={handleViewBookings}
+              >
+                View Bookings
+              </button>
             </div>
             
             <div className="dashboard-card">

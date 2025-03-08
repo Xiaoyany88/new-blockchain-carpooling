@@ -228,6 +228,10 @@ contract RideOffer {
     function getUserBookings(address _user) external view returns (uint256[] memory) {
         return userBookings[_user];
     }
+    // Function to get all bookings for a specific ride
+    function getBookingsByRide(uint256 _rideId) external view returns (Booking[] memory) {
+        return bookings[_rideId];
+    }
     
     // Function to rate a driver after a ride
     function rateDriver(address _driver, uint256 _rideId, uint256 _rating) external {
