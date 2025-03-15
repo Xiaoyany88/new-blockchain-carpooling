@@ -47,11 +47,12 @@ contract CarpoolSystem {
      */
     function bookRide(uint256 _rideId, uint256 _seats) external payable {
         // Get price from ride
-        (,,,,,uint256 pricePerSeat,,,) = rideOffer.rides(_rideId);
+        (,,,,,uint256 pricePerSeat,,,bool isActive) = rideOffer.getRide(_rideId);
+        require(isActive, "Ride is not active");
         require(msg.value == pricePerSeat * _seats, "Incorrect payment amount");
         
         // Handle payment through escrow
-        paymentEscrow.escrowPayment{value: msg.value}(_rideId, _seats);
+        paymentEscrow.escrowPayment{value: msg.value}(_rideId, _seats, msg.sender);
         
         // Call the special function that skips payment check
         rideOffer.bookRideFromSystem(_rideId, _seats, msg.sender);
@@ -66,21 +67,21 @@ contract CarpoolSystem {
      */
     function completeRide(uint256 _rideId, address _passenger) external {
         // Get driver from ride
-        (address driver,,,,,,,, bool isActive) = rideOffer.rides(_rideId);
+        (address driver,,,,,,,, bool isActive) = rideOffer.getRide(_rideId);
         require(msg.sender == driver, "Only driver can complete ride");
         require(isActive, "Ride is not active");
         
         // Complete the ride in RideOffer
-        rideOffer.completeRide(_rideId);
+        rideOffer.completeRideFromSystem(_rideId, msg.sender);
         
         // Update driver reputation
-        reputationSystem.recordRideCompletion(driver);
+        //reputationSystem.recordRideCompletion(driver);
         
         // Release payment for this passenger
         paymentEscrow.releasePayment(_rideId, payable(driver), _passenger);
         
         // Issue token rewards
-        issueRewardTokens(driver);
+        // issueRewardTokens(driver);
         
         emit RideCompleted(_rideId, driver, _passenger);
     }

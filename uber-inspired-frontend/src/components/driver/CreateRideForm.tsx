@@ -2,7 +2,11 @@ import { useState } from 'react';
 import useProvider from '../../hooks/useProvider';
 import useRideOffer from '../../hooks/useRideOffer';
 import './CreateRideForm.css';
-export const CreateRideForm = () => {
+
+type CreateRideFormProps = {
+  onSuccess?: () => void;
+};
+export const CreateRideForm = ({ onSuccess }: CreateRideFormProps) => {
   const provider = useProvider();
   const { createRide } = useRideOffer(provider);
   
@@ -17,6 +21,16 @@ export const CreateRideForm = () => {
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [result, setResult] = useState<{success: boolean, message: string} | null>(null);
   
+  const resetForm = () => {
+    setFormState({
+      pickup: '',
+      destination: '',
+      departureTime: '',
+      maxPassengers: 1,
+      pricePerSeat: '0.01',
+      additionalNotes: ''
+    });
+  };
   const handleChange = (e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement>) => {
     const { name, value } = e.target;
     setFormState(prev => ({ ...prev, [name]: value }));
@@ -44,6 +58,16 @@ export const CreateRideForm = () => {
         success: true,
         message: `Ride created successfully! Transaction: ${receipt?.transactionHash}`
       });
+
+      // Reset form after successful submission
+      resetForm();
+
+      // Call onSuccess after a short delay to allow user to see success message
+      if (onSuccess) {
+        setTimeout(() => {
+          onSuccess();
+        }, 2000); // 2 second delay
+      }
     } catch (error) {
       console.error('Error creating ride:', error);
       setResult({
@@ -146,6 +170,7 @@ export const CreateRideForm = () => {
       {result && (
         <div className={`result ${result.success ? 'success' : 'error'}`}>
           {result.message}
+          {result.success && <div className="redirect-message">Redirecting to dashboard...</div>}
         </div>
       )}
     </form>

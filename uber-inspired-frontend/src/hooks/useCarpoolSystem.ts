@@ -53,7 +53,7 @@ const useCarpoolSystem = (provider: ethers.providers.Web3Provider | null) => {
       );
 
       // Verify exact match with contract data
-      const rideDetails = await rideOfferContract.rides(rideId);
+      const rideDetails = await rideOfferContract.getRide(rideId);
       const contractPricePerSeat = rideDetails.pricePerSeat;
       const contractTotalWei = contractPricePerSeat.mul(seats);
       
@@ -140,7 +140,7 @@ const useCarpoolSystem = (provider: ethers.providers.Web3Provider | null) => {
           departureTime: ride.departureTime.toNumber(),
           pricePerSeat: ethers.utils.formatEther(ride.pricePerSeat),
           bookedSeats: userBooking ? userBooking.seats.toNumber() : 0,
-          status: userBooking ? (userBooking.completed ? "Completed" : "Active") : "Unknown",
+          status: userBooking ? (userBooking.isActive ? "Active" : "Completed") : "Unknown",
           isPaid: userBooking ? userBooking.paid : false
         };
       });
@@ -157,9 +157,61 @@ const useCarpoolSystem = (provider: ethers.providers.Web3Provider | null) => {
     }
   }, [contract, provider]);
 
+
+  const completeRide = useCallback(async (
+    rideId: number,
+    passengerAddress: string
+  ) => {
+    if (!contract) {
+      return { 
+        success: false, 
+        error: "Wallet not connected" 
+      };
+    }
+  
+    try {
+      console.log("Completing ride:", rideId, "for passenger:", passengerAddress);
+      
+      // Call the completeRide function from our CarpoolSystem contract
+      const tx = await contract.completeRide(rideId, passengerAddress, {
+        gasLimit: 700000 // Set a reasonable gas limit
+      });
+      
+      console.log("Transaction sent:", tx.hash);
+      // Wait for transaction to be confirmed
+      const receipt = await tx.wait();
+      console.log("Transaction confirmed:", receipt);
+      
+      return { 
+        success: true, 
+        transactionHash: receipt.transactionHash 
+      };
+    } catch (error: any) {
+      console.error("Error completing ride:", error);
+      
+      // Try to extract more useful error information
+      let errorMessage = "Transaction failed";
+      if (error.reason) {
+        errorMessage = error.reason;
+      } else if (error.message) {
+        if (error.message.includes("execution reverted")) {
+          const match = error.message.match(/execution reverted: (.*?)"/);
+          if (match && match[1]) {
+            errorMessage = match[1];
+          }
+        }
+      }
+      
+      return { success: false, error: errorMessage };
+    }
+  }, [contract]);
+
+
+
   return {
     bookRide,
-    getUserBookings
+    getUserBookings,
+    completeRide
   };
 };
 

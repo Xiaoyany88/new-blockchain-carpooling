@@ -97,6 +97,11 @@
         "internalType": "uint256",
         "name": "_seats",
         "type": "uint256"
+      },
+      {
+        "internalType": "address",
+        "name": "_passenger",
+        "type": "address"
       }
     ],
     "name": "escrowPayment",

@@ -17,17 +17,17 @@ contract PaymentEscrow {
     event PaymentReleased(uint256 rideId, address passenger, address driver, uint256 amount);
     event PaymentRefunded(uint256 rideId, address passenger, uint256 amount);
 
-    function escrowPayment(uint256 _rideId, uint256 _seats) external payable {
+    function escrowPayment(uint256 _rideId, uint256 _seats, address _passenger) external payable {
         require(msg.value > 0, "Payment required");
-        payments[_rideId][msg.sender] = Payment({
+        payments[_rideId][_passenger] = Payment({
             rideId: _rideId,
-            passenger: payable(msg.sender),
+            passenger: payable(_passenger),
             amount: msg.value,
             seats: _seats,
             released: false,
             refunded: false
         });
-        emit PaymentEscrowed(_rideId, msg.sender, msg.value, _seats);
+        emit PaymentEscrowed(_rideId, _passenger, msg.value, _seats);
     }
 
     function releasePayment(uint256 _rideId, address payable _driver, address _passenger) external {

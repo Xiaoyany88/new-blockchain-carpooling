@@ -1,0 +1,265 @@
+/* src/components/driver/DriverRides.css */
+.driver-rides {
+width: 100%;
+max-width: 1000px;
+margin: 0 auto;
+}
+
+.driver-rides h2 {
+margin-bottom: 20px;
+color: #333;
+}
+
+.rides-list {
+display: flex;
+flex-direction: column;
+gap: 20px;
+}
+
+/* Update ride cards to match booking cards styling */
+.ride-card {
+background-color: white;
+border-radius: 10px;
+box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
+padding: 20px;
+transition: transform 0.2s;
+}
+
+.ride-card:hover {
+transform: translateY(-5px);
+}
+
+/* Make completed rides styling match */
+.ride-card.completed {
+background-color: #F8FAFC;
+border: 1px solid #E2E8F0;
+}
+
+.ride-header {
+display: flex;
+justify-content: space-between;
+align-items: center;
+margin-bottom: 15px;
+border-bottom: 1px solid #eee;
+padding-bottom: 12px;
+}
+
+.ride-header h3 {
+margin: 0;
+font-size: 18px;
+color: #333;
+}
+
+/* Match status indicator styling */
+.ride-status {
+padding: 4px 10px;
+border-radius: 20px;
+font-size: 14px;
+font-weight: 600;
+}
+
+.ride-status.active {
+background-color: #D1FAE5;
+color: #047857;
+}
+
+.ride-status.completed {
+background-color: #E0E7FF;
+color: #4338CA;
+}
+
+.ride-status.cancelled { /* Add cancelled status to match MyBookings */
+background-color: #FEE2E2;
+color: #B91C1C;
+}
+
+.ride-details {
+margin-bottom: 15px;
+}
+
+.ride-details p {
+margin: 8px 0;
+color: #4B5563;
+}
+
+/* Style passengers section to match MyBookings aesthetic */
+.passengers-section {
+margin-top: 20px;
+border-top: 1px solid #eee;
+padding-top: 15px;
+}
+
+.passengers-section h4 {
+margin-top: 0;
+margin-bottom: 15px;
+color: #333;
+font-size: 16px;
+}
+
+.passengers-list {
+display: flex;
+flex-direction: column;
+gap: 10px;
+}
+
+/* Make passenger items look like mini-cards within the ride card */
+.passenger-item {
+display: flex;
+justify-content: space-between;
+align-items: center;
+background-color: #F9FAFB; /* Lighter shade to match MyBookings aesthetic */
+padding: 12px 15px;
+border-radius: 8px;
+border: 1px solid #F3F4F6;
+}
+
+.passenger-info {
+display: flex;
+align-items: center;
+gap: 15px;
+}
+
+.passenger-address {
+font-family: monospace;
+margin: 0;
+color: #4B5563;
+}
+
+.passenger-seats {
+margin: 0;
+color: #4B5563;
+}
+
+/* Style payment status to match booking status */
+.payment-status {
+margin: 0;
+padding: 3px 8px;
+border-radius: 20px;
+font-size: 12px;
+background-color: #D1FAE5;
+color: #047857;
+}
+
+.passenger-actions {
+display: flex;
+align-items: center;
+}
+
+/* Update button styles to match action-btn in MyBookings */
+.complete-button {
+background-color: #3B82F6;
+color: white;
+border: none;
+padding: 8px 15px;
+border-radius: 6px;
+cursor: pointer;
+font-size: 14px;
+font-weight: 500;
+transition: all 0.2s;
+}
+
+.complete-button:hover {
+background-color: #2563EB;
+}
+
+.complete-button:disabled {
+background-color: #93C5FD;
+cursor: not-allowed;
+}
+
+/* Match completed-label styling */
+.completed-label {
+padding: 4px 10px;
+border-radius: 20px;
+font-size: 14px;
+background-color: #E0E7FF;
+color: #4338CA;
+font-weight: 500;
+}
+
+/* Add ride actions to match booking actions */
+.ride-actions {
+display: flex;
+gap: 10px;
+margin-top: 15px;
+border-top: 1px solid #eee;
+padding-top: 15px;
+}
+
+/* Style action buttons to match MyBookings */
+.action-btn {
+background-color: #F3F4F6;
+color: #4B5563;
+border: none;
+padding: 8px 15px;
+border-radius: 6px;
+cursor: pointer;
+font-size: 14px;
+font-weight: 500;
+transition: all 0.2s;
+}
+
+.action-btn:hover {
+background-color: #E5E7EB;
+}
+
+/* Match loading/error/empty states */
+.rides-loading, .rides-error, .no-rides {
+text-align: center;
+padding: 40px 0;
+}
+
+.rides-loading {
+color: #6B7280;
+font-size: 18px;
+}
+
+.rides-error {
+padding: 20px;
+background-color: #FEE2E2;
+color: #B91C1C;
+border-radius: 8px;
+margin: 20px 0;
+}
+
+.no-rides {
+text-align: center;
+padding: 40px 0;
+}
+
+.no-rides h2 {
+margin-bottom: 10px;
+color: #4B5563;
+}
+
+.no-rides p {
+color: #6B7280;
+}
+
+/* Back button styling */
+.back-button {
+    background-color: #F3F4F6;
+    color: #4B5563;
+    border: none;
+    border-radius: 6px;
+    font-size: 14px;
+    font-weight: 500;
+    padding: 8px 12px;
+    cursor: pointer;
+    transition: all 0.2s;
+    margin-bottom: 20px;
+    display: inline-block;
+    width: auto; /* This prevents stretching */
+  }
+  
+  .back-button:hover {
+    background-color: #E5E7EB;
+  }
+  
+  /* Container styling to ensure proper button positioning */
+  .rides-container {
+    display: flex;
+    flex-direction: column;
+    align-items: flex-start; /* This aligns the button to the left */
+    width: 100%;
+  }

@@ -3,6 +3,7 @@ import { useState } from 'react';
 import { ethers } from 'ethers';
 import useProvider from '../../hooks/useProvider';
 import useCarpoolSystem from '../../hooks/useCarpoolSystem';
+import { CONTRACT_ADDRESSES, SUPPORTED_CHAIN_ID } from '../../config/contracts';
 import './BookRideButton.css';
 
 type Ride = {
@@ -61,6 +62,53 @@ export const BookRideButton = ({ ride }: { ride: Ride }) => {
       const result = await bookRide(ride.id, seats, totalCostWei);
       
       if (result.success) {
+        console.log("🔍 PAYMENT VERIFICATION: Checking if payment was escrowed...");
+        try {
+          const signer = provider.getSigner();
+          const userAddress = await signer.getAddress();
+          
+          // Get the PaymentEscrow contract address from CarpoolSystem
+          const carpoolSystemContract = new ethers.Contract(
+            CONTRACT_ADDRESSES.CARPOOL_SYSTEM,
+            ['function paymentEscrow() external view returns (address)'],
+            signer
+          );
+          
+          const paymentEscrowAddress = await carpoolSystemContract.paymentEscrow();
+          console.log("📋 PaymentEscrow contract address:", paymentEscrowAddress);
+          
+          // Create PaymentEscrow contract instance
+          const paymentEscrowContract = new ethers.Contract(
+            paymentEscrowAddress,
+            [
+              'function payments(uint256, address) external view returns (uint256 rideId, address passenger, uint256 amount, uint256 seats, bool released, bool refunded)'
+            ],
+            signer
+          );
+          
+          // Get payment details from escrow
+          const payment = await paymentEscrowContract.payments(ride.id, userAddress);
+          
+          console.log("💰 PAYMENT ESCROW RECORD:", {
+            rideId: payment.rideId.toString(),
+            passenger: payment.passenger,
+            amount: ethers.utils.formatEther(payment.amount),
+            seats: payment.seats.toString(),
+            released: payment.released,
+            refunded: payment.refunded,
+            exists: payment.amount.gt(0),
+            matchesUserAddress: payment.passenger.toLowerCase() === userAddress.toLowerCase(),
+            matchesRideId: payment.rideId.toString() === ride.id.toString()
+          });
+          
+          if (payment.amount.gt(0)) {
+            console.log("✅ SUCCESS: Payment was correctly escrowed!");
+          } else {
+            console.log("❌ ERROR: No payment record found in escrow!");
+          }
+        } catch (verifyError) {
+          console.error("Error verifying payment escrow:", verifyError);
+        }
         setBookingResult({
           success: true,
           message: `Successfully booked ${seats} seat(s)!`,

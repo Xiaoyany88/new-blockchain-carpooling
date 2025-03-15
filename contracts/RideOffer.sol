@@ -180,6 +180,34 @@ contract RideOffer {
         emit RideCompleted(_rideId);
     }
 
+    function completeRideFromSystem(uint256 _rideId, address _driver) external {
+        // Only CarpoolSystem can call this function
+        require(msg.sender == carpoolSystem, "Only CarpoolSystem can call");
+        
+        Ride storage ride = rides[_rideId];
+        require(_driver == ride.driver, "Only driver can complete ride");
+        require(ride.isActive, "Ride is not active");
+        require(ride.departureTime <= block.timestamp, "Ride hasn't started yet");
+
+        ride.isActive = false;
+        
+        // Transfer payments to driver
+        /*uint256 totalPayment = 0;
+        for (uint i = 0; i < bookings[_rideId].length; i++) {
+            Booking storage booking = bookings[_rideId][i];
+            if (booking.paid && !booking.completed) {
+                totalPayment += ride.pricePerSeat * booking.seats;
+                booking.completed = true;
+            }
+        }
+
+        if (totalPayment > 0) {
+            payable(ride.driver).transfer(totalPayment);
+        }*/
+
+        emit RideCompleted(_rideId);
+    }
+
     function getRide(uint256 _rideId) external view returns (
         address driver,
         string memory pickup,
@@ -232,7 +260,10 @@ contract RideOffer {
     function getBookingsByRide(uint256 _rideId) external view returns (Booking[] memory) {
         return bookings[_rideId];
     }
-    
+    // havent add yet due to insufficient funds
+    function getRideCount() external view returns (uint256) {
+        return rideCounter; 
+    }
     // Function to rate a driver after a ride
     function rateDriver(address _driver, uint256 _rideId, uint256 _rating) external {
         require(_rating >= 1 && _rating <= 5, "Rating must be between 1 and 5");

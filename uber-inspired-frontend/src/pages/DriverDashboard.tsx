@@ -1,12 +1,15 @@
+// src/pages/DriverDashboard.tsx
 import { useEffect, useState } from 'react';
 import useProvider from '../hooks/useProvider';
 import { CreateRideForm } from '../components/driver/CreateRideForm';
+import { DriverRides } from '../components/driver/DriverRides';
 import './DriverDashboard.css';
 
 export const DriverDashboard = () => {
   const provider = useProvider();
   const [isConnected, setIsConnected] = useState(false);
   const [showCreateForm, setShowCreateForm] = useState(false);
+  const [showRides, setShowRides] = useState(false);
   
   useEffect(() => {
     const checkConnection = async () => {
@@ -30,6 +33,12 @@ export const DriverDashboard = () => {
     );
   }
   
+  // Handler to go back to dashboard
+  const handleBackToDashboard = () => {
+    setShowCreateForm(false);
+    setShowRides(false);
+  };
+  
   return (
     <div className="driver-dashboard">
       <h1>Driver Dashboard</h1>
@@ -38,11 +47,21 @@ export const DriverDashboard = () => {
         <div className="form-container">
           <button 
             className="back-button"
-            onClick={() => setShowCreateForm(false)}
+            onClick={handleBackToDashboard}
           >
             ← Back to Dashboard
           </button>
-          <CreateRideForm />
+          <CreateRideForm onSuccess={handleBackToDashboard} />
+        </div>
+      ) : showRides ? (
+        <div className="rides-container">
+          <button 
+            className="back-button"
+            onClick={handleBackToDashboard}
+          >
+            ← Back to Dashboard
+          </button>
+          <DriverRides />
         </div>
       ) : (
         <div className="dashboard-grid">
@@ -60,7 +79,12 @@ export const DriverDashboard = () => {
           <div className="dashboard-card">
             <h2>Your Rides</h2>
             <p>Manage your active and upcoming rides</p>
-            <button className="dashboard-btn">View Rides</button>
+            <button 
+              className="dashboard-btn"
+              onClick={() => setShowRides(true)}
+            >
+              View Rides
+            </button>
           </div>
           
           <div className="dashboard-card">
