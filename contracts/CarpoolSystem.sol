@@ -7,6 +7,14 @@ import "./PaymentEscrow.sol";
 import "./CarpoolToken.sol";
 
 contract CarpoolSystem {
+    // Define the Booking struct to match the one in RideOffer
+    struct Booking {
+        address passenger;
+        uint256 rideId;
+        uint256 seats;
+        bool paid;
+        bool completed;
+    }
     RideOffer public rideOffer;
     ReputationSystem public reputationSystem;
     PaymentEscrow public paymentEscrow;
@@ -20,6 +28,7 @@ contract CarpoolSystem {
     event RideBooked(uint256 indexed rideId, address indexed passenger, uint256 seats);
     event DriverRated(uint256 indexed rideId, address indexed driver, uint8 rating);
     event RewardTokensIssued(address indexed user, uint256 amount);
+    event BookingCancelled(uint256 indexed rideId, address indexed passenger, uint256 seats, bool refunded);
 
     constructor(
         address _rideOffer,
@@ -72,7 +81,7 @@ contract CarpoolSystem {
         require(isActive, "Ride is not active");
         
         // Complete the ride in RideOffer
-        rideOffer.completeRideFromSystem(_rideId, msg.sender);
+        rideOffer.completeRideFromSystem(_rideId, msg.sender, _passenger);
         
         // Update driver reputation
         //reputationSystem.recordRideCompletion(driver);
@@ -85,7 +94,42 @@ contract CarpoolSystem {
         
         emit RideCompleted(_rideId, driver, _passenger);
     }
-
+    
+    /**
+    * @notice Cancel a booking and handle refund or payment to driver based on timing
+    * @param _rideId The ID of the ride to cancel
+    * @param _isWithin24Hours Whether cancellation is within 24h of departure
+    */
+    function cancelBooking(uint256 _rideId, bool _isWithin24Hours) external {
+        // Get the booking details from RideOffer
+        address passenger = msg.sender;
+        
+        // Verify the booking exists and belongs to the caller
+        bool bookingExists = rideOffer.bookingExists(_rideId, passenger);
+        require(bookingExists, "No valid booking found");
+        
+        // Get ride details to check timing
+        (address driver,,,uint256 departureTime,,,,, bool isActive) = rideOffer.getRide(_rideId);
+        require(isActive, "Ride is not active");
+        require(departureTime > block.timestamp, "Ride already departed");
+        
+        // If cancellation is within 24 hours, payment goes to driver
+        // If more than 24 hours before, refund passenger
+        if (_isWithin24Hours) {
+            // Transfer payment to driver using releasePayment
+            paymentEscrow.releasePayment(_rideId, payable(driver), passenger);
+        } else {
+            // Refund payment to passenger
+            paymentEscrow.refundPayment(_rideId, passenger);
+        }
+        // Get the seats count for this booking
+        uint256 seats = rideOffer.getBookingSeats(_rideId, passenger);
+        
+        // Cancel the booking in RideOffer
+        rideOffer.cancelBookingFromSystem(_rideId, passenger, seats);
+        
+        emit BookingCancelled(_rideId, passenger, seats, !_isWithin24Hours);
+    }
     /**
      * @notice Rate a driver after ride completion
      * @param _rideId The ID of the completed ride

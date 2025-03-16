@@ -1,6 +1,7 @@
 import { useEffect, useState } from 'react';
 import useProvider from '../../hooks/useProvider';
 import useCarpoolSystem from '../../hooks/useCarpoolSystem';
+import { CancelBookingModal } from './CancelBookingModal';
 import './MyBookings.css';
 
 type Booking = {
@@ -17,10 +18,13 @@ type Booking = {
 
 export const MyBookings = () => {
   const provider = useProvider();
-  const { getUserBookings } = useCarpoolSystem(provider);
+  const { getUserBookings, cancelBookingFromSystem } = useCarpoolSystem(provider);
   const [bookings, setBookings] = useState<Booking[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
+  const [cancelBookingData, setCancelBookingData] = useState<Booking | null>(null);
+  const [isCancelling, setIsCancelling] = useState(false);
+  const [cancellationResult, setCancellationResult] = useState<{success: boolean; message: string} | null>(null);
 
   useEffect(() => {
     const fetchBookings = async () => {
@@ -47,6 +51,66 @@ export const MyBookings = () => {
     
     fetchBookings();
   }, [getUserBookings]);
+
+  const handleCancelBooking = (booking: Booking) => {
+    setCancelBookingData(booking);
+  };
+  
+  const handleCloseModal = () => {
+    setCancelBookingData(null);
+    setCancellationResult(null);
+  };
+  
+  const handleConfirmCancellation = async () => {
+    if (!cancelBookingData || !cancelBookingFromSystem) return;
+    
+    try {
+      setIsCancelling(true);
+      
+      // Calculate if cancellation is within 24 hours
+      const currentTime = Math.floor(Date.now() / 1000); // Current time in seconds
+      const departureTime = cancelBookingData.departureTime;
+      const timeUntilDeparture = departureTime - currentTime; // Time until departure in seconds
+      const isWithin24Hours = timeUntilDeparture < 24 * 60 * 60; // 24 hours in seconds
+      
+      // Call the smart contract function
+      const result = await cancelBookingFromSystem(
+        cancelBookingData.id, 
+        isWithin24Hours
+      );
+      
+      if (result.success) {
+        // Update local state to reflect the cancellation
+        setBookings(prevBookings => prevBookings.map(booking => {
+          if (booking.id === cancelBookingData.id) {
+            return { ...booking, status: 'Cancelled' };
+          }
+          return booking;
+        }));
+        
+        setCancellationResult({
+          success: true, 
+          message: isWithin24Hours 
+            ? "Your booking has been cancelled. Since cancellation was within 24 hours of departure, the payment has been sent to the driver."
+            : "Your booking has been cancelled and your payment has been refunded."
+        });
+      } else {
+        setCancellationResult({
+          success: false,
+          message: result.error || "Failed to cancel booking"
+        });
+      }
+    } catch (err: any) {
+      console.error("Error cancelling booking:", err);
+      setCancellationResult({
+        success: false,
+        message: err.message || "An unexpected error occurred"
+      });
+    } finally {
+      setIsCancelling(false);
+    }
+  };
+
   
   if (loading) {
     return <div className="bookings-loading">Loading your bookings...</div>;
@@ -88,12 +152,29 @@ export const MyBookings = () => {
             </div>
             
             <div className="booking-actions">
-              <button className="action-btn">Cancel Booking</button>
+              {booking.status.toLowerCase() !== 'cancelled' && (
+                  <button 
+                    className="action-btn"
+                    onClick={() => handleCancelBooking(booking)}
+                    disabled={booking.status.toLowerCase() === 'completed'}
+                  >
+                    Cancel Booking
+                  </button>
+                )}
               <button className="action-btn">Contact Driver</button>
             </div>
           </div>
         ))}
       </div>
+      {cancelBookingData && (
+        <CancelBookingModal
+          booking={cancelBookingData}
+          onClose={handleCloseModal}
+          onConfirm={handleConfirmCancellation}
+          isProcessing={isCancelling}
+          result={cancellationResult}
+        />
+      )}
     </div>
   );
 };

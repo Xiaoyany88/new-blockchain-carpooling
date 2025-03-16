@@ -22,6 +22,31 @@
       {
         "indexed": true,
         "internalType": "address",
+        "name": "passenger",
+        "type": "address"
+      },
+      {
+        "indexed": false,
+        "internalType": "uint256",
+        "name": "seats",
+        "type": "uint256"
+      }
+    ],
+    "name": "BookingCancelled",
+    "type": "event"
+  },
+  {
+    "anonymous": false,
+    "inputs": [
+      {
+        "indexed": true,
+        "internalType": "uint256",
+        "name": "rideId",
+        "type": "uint256"
+      },
+      {
+        "indexed": true,
+        "internalType": "address",
         "name": "driver",
         "type": "address"
       },
@@ -106,6 +131,31 @@
         "internalType": "address",
         "name": "driver",
         "type": "address"
+      },
+      {
+        "indexed": true,
+        "internalType": "address",
+        "name": "passenger",
+        "type": "address"
+      }
+    ],
+    "name": "RideCompletedForPassenger",
+    "type": "event"
+  },
+  {
+    "anonymous": false,
+    "inputs": [
+      {
+        "indexed": true,
+        "internalType": "uint256",
+        "name": "rideId",
+        "type": "uint256"
+      },
+      {
+        "indexed": true,
+        "internalType": "address",
+        "name": "driver",
+        "type": "address"
       }
     ],
     "name": "RideCreated",
@@ -150,6 +200,30 @@
     "name": "bookRideFromSystem",
     "outputs": [],
     "stateMutability": "nonpayable",
+    "type": "function"
+  },
+  {
+    "inputs": [
+      {
+        "internalType": "uint256",
+        "name": "_rideId",
+        "type": "uint256"
+      },
+      {
+        "internalType": "address",
+        "name": "_passenger",
+        "type": "address"
+      }
+    ],
+    "name": "bookingExists",
+    "outputs": [
+      {
+        "internalType": "bool",
+        "name": "",
+        "type": "bool"
+      }
+    ],
+    "stateMutability": "view",
     "type": "function"
   },
   {
@@ -202,6 +276,29 @@
         "internalType": "uint256",
         "name": "_rideId",
         "type": "uint256"
+      },
+      {
+        "internalType": "address",
+        "name": "_passenger",
+        "type": "address"
+      },
+      {
+        "internalType": "uint256",
+        "name": "_seats",
+        "type": "uint256"
+      }
+    ],
+    "name": "cancelBookingFromSystem",
+    "outputs": [],
+    "stateMutability": "nonpayable",
+    "type": "function"
+  },
+  {
+    "inputs": [
+      {
+        "internalType": "uint256",
+        "name": "_rideId",
+        "type": "uint256"
       }
     ],
     "name": "cancelRide",
@@ -245,6 +342,11 @@
       {
         "internalType": "address",
         "name": "_driver",
+        "type": "address"
+      },
+      {
+        "internalType": "address",
+        "name": "_passenger",
         "type": "address"
       }
     ],
@@ -318,6 +420,30 @@
         "internalType": "uint256[]",
         "name": "",
         "type": "uint256[]"
+      }
+    ],
+    "stateMutability": "view",
+    "type": "function"
+  },
+  {
+    "inputs": [
+      {
+        "internalType": "uint256",
+        "name": "_rideId",
+        "type": "uint256"
+      },
+      {
+        "internalType": "address",
+        "name": "_passenger",
+        "type": "address"
+      }
+    ],
+    "name": "getBookingSeats",
+    "outputs": [
+      {
+        "internalType": "uint256",
+        "name": "",
+        "type": "uint256"
       }
     ],
     "stateMutability": "view",

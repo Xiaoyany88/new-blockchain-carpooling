@@ -49,8 +49,10 @@ contract RideOffer {
     event RideBooked(uint256 indexed rideId, address indexed passenger, uint256 seats);
     event RideCancelled(uint256 indexed rideId);
     event RideCompleted(uint256 indexed rideId);
+    event RideCompletedForPassenger(uint256 indexed rideId, address indexed driver, address indexed passenger);
     event DriverRated(uint256 indexed rideId, address indexed driver, address indexed passenger, uint256 rating);
-
+    // Add this event at the top with other events
+    event BookingCancelled(uint256 indexed rideId, address indexed passenger, uint256 seats);
     function createRide(
         string memory _pickup,
         string memory _destination,
@@ -180,32 +182,90 @@ contract RideOffer {
         emit RideCompleted(_rideId);
     }
 
-    function completeRideFromSystem(uint256 _rideId, address _driver) external {
-        // Only CarpoolSystem can call this function
+    function completeRideFromSystem(uint256 _rideId, address _driver, address _passenger) external {
+    // Only CarpoolSystem can call this function
         require(msg.sender == carpoolSystem, "Only CarpoolSystem can call");
         
         Ride storage ride = rides[_rideId];
         require(_driver == ride.driver, "Only driver can complete ride");
         require(ride.isActive, "Ride is not active");
-        require(ride.departureTime <= block.timestamp, "Ride hasn't started yet");
-
-        ride.isActive = false;
         
-        // Transfer payments to driver
-        /*uint256 totalPayment = 0;
+        // Find and update the specific passenger's booking
+        bool bookingFound = false;
         for (uint i = 0; i < bookings[_rideId].length; i++) {
             Booking storage booking = bookings[_rideId][i];
-            if (booking.paid && !booking.completed) {
-                totalPayment += ride.pricePerSeat * booking.seats;
-                booking.completed = true;
+            if (booking.passenger == _passenger && booking.paid) {
+                booking.completed = true;  // Mark this specific booking as completed
+                bookingFound = true;
+                break;
             }
         }
+        
+        require(bookingFound, "No valid booking found for passenger");
+        
+        // Only set ride as inactive if all paid bookings are completed
+        bool allCompleted = true;
+        for (uint i = 0; i < bookings[_rideId].length; i++) {
+            if (bookings[_rideId][i].paid && !bookings[_rideId][i].completed) {
+                allCompleted = false;
+                break;
+            }
+        }
+        
+        if (allCompleted) {
+            ride.isActive = false;
+        }
+        
+        emit RideCompletedForPassenger(_rideId, _driver, _passenger);
+    }
 
-        if (totalPayment > 0) {
-            payable(ride.driver).transfer(totalPayment);
-        }*/
+    function cancelBookingFromSystem(uint256 _rideId, address _passenger, uint256 _seats) external {
+        // Only allow CarpoolSystem to call this
+        require(msg.sender == carpoolSystem, "Only CarpoolSystem can call");
+        
+        Ride storage ride = rides[_rideId];
+        require(ride.isActive, "Ride is not active");
+        
+        // Find and update the booking
+        bool bookingFound = false;
+        
+        for (uint i = 0; i < bookings[_rideId].length; i++) {
+            Booking storage booking = bookings[_rideId][i];
+            if (booking.passenger == _passenger && booking.paid) {
+                // Mark the booking as cancelled (not paid)
+                booking.paid = false;
+                booking.completed = false;
+                
+                // Restore available seats using the provided seats parameter
+                ride.availableSeats += _seats;
+                
+                bookingFound = true;
+                break;
+            }
+        }
+        
+        require(bookingFound, "No valid booking found for this passenger");
+        
+        emit BookingCancelled(_rideId, _passenger, _seats);
+    }
+    // Check if a booking exists and is paid
+    function bookingExists(uint256 _rideId, address _passenger) external view returns (bool) {
+        for (uint i = 0; i < bookings[_rideId].length; i++) {
+            if (bookings[_rideId][i].passenger == _passenger && bookings[_rideId][i].paid) {
+                return true;
+            }
+        }
+        return false;
+    }
 
-        emit RideCompleted(_rideId);
+    // Get the number of seats for a specific booking
+    function getBookingSeats(uint256 _rideId, address _passenger) external view returns (uint256) {
+        for (uint i = 0; i < bookings[_rideId].length; i++) {
+            if (bookings[_rideId][i].passenger == _passenger) {
+                return bookings[_rideId][i].seats;
+            }
+        }
+        return 0;
     }
 
     function getRide(uint256 _rideId) external view returns (
@@ -260,7 +320,6 @@ contract RideOffer {
     function getBookingsByRide(uint256 _rideId) external view returns (Booking[] memory) {
         return bookings[_rideId];
     }
-    // havent add yet due to insufficient funds
     function getRideCount() external view returns (uint256) {
         return rideCounter; 
     }

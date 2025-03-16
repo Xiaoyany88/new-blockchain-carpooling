@@ -126,7 +126,6 @@ const useCarpoolSystem = (provider: ethers.providers.Web3Provider | null) => {
         const ride = await rideOfferContract.rides(rideId);
         
         // Find this user's specific booking for this ride
-        // This assumes you have a function to get a specific booking
         const bookingsForRide = await rideOfferContract.getBookingsByRide(rideId);
         const userBooking = bookingsForRide.find((booking: any) => 
           booking.passenger.toLowerCase() === userAddress.toLowerCase()
@@ -140,7 +139,7 @@ const useCarpoolSystem = (provider: ethers.providers.Web3Provider | null) => {
           departureTime: ride.departureTime.toNumber(),
           pricePerSeat: ethers.utils.formatEther(ride.pricePerSeat),
           bookedSeats: userBooking ? userBooking.seats.toNumber() : 0,
-          status: userBooking ? (userBooking.isActive ? "Active" : "Completed") : "Unknown",
+          status: userBooking ? (userBooking.completed ? "Completed" : "Active") : "Unknown",
           isPaid: userBooking ? userBooking.paid : false
         };
       });
@@ -206,12 +205,52 @@ const useCarpoolSystem = (provider: ethers.providers.Web3Provider | null) => {
     }
   }, [contract]);
 
+  const cancelBookingFromSystem = useCallback(async (
+    rideId: number, 
+    isWithin24Hours: boolean
+  ) => {
+    if (!contract) {
+      return { success: false, error: "Wallet not connected" };
+    }
+    
+    try {
+      console.log(`Cancelling booking for ride ID: ${rideId}, within 24h: ${isWithin24Hours}`);
+      
+      // Call the appropriate smart contract function based on timing
+      const tx = await contract.cancelBooking(rideId, isWithin24Hours);
+      console.log("Transaction sent:", tx.hash);
+      
+      // Wait for transaction to be mined
+      const receipt = await tx.wait();
+      console.log("Transaction confirmed:", receipt);
+      
+      return { 
+        success: true, 
+        transactionHash: receipt.transactionHash
+      };
+    } catch (error: any) {
+      console.error("Error cancelling booking:", error);
+      
+      // Handle specific errors
+      if (error.code === 'CALL_EXCEPTION') {
+        const reason = error.reason || "Transaction failed";
+        return { success: false, error: `Transaction failed: ${reason}` };
+      }
+      
+      return { 
+        success: false, 
+        error: error.message || "Failed to cancel booking"
+      };
+    }
+  }, [contract]);
+
 
 
   return {
     bookRide,
     getUserBookings,
-    completeRide
+    completeRide,
+    cancelBookingFromSystem
   };
 };
 

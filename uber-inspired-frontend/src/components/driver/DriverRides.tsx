@@ -234,7 +234,7 @@ export const DriverRides = () => {
       console.error("DEBUG - Error fetching ride details:", err);
     }
     
-    // Original code continues below
+  
     const key = `${rideId}-${passengerAddress}`;
     setCompletingRide(prev => ({ ...prev, [key]: true }));
     
