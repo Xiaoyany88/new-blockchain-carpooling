@@ -3,6 +3,8 @@ import useProvider from '../../hooks/useProvider';
 import useCarpoolSystem from '../../hooks/useCarpoolSystem';
 import { CancelBookingModal } from './CancelBookingModal';
 import './MyBookings.css';
+// Tab options
+type TabType = 'Active' | 'Completed' | 'Cancelled';
 
 type Booking = {
   id: number;
@@ -14,6 +16,7 @@ type Booking = {
   bookedSeats: number;
   status: string;
   isPaid: boolean;
+  isCancelled?: boolean;
 };
 
 export const MyBookings = () => {
@@ -25,6 +28,8 @@ export const MyBookings = () => {
   const [cancelBookingData, setCancelBookingData] = useState<Booking | null>(null);
   const [isCancelling, setIsCancelling] = useState(false);
   const [cancellationResult, setCancellationResult] = useState<{success: boolean; message: string} | null>(null);
+   // New state for active tab
+   const [activeTab, setActiveTab] = useState<TabType>('Active');
 
   useEffect(() => {
     const fetchBookings = async () => {
@@ -51,6 +56,26 @@ export const MyBookings = () => {
     
     fetchBookings();
   }, [getUserBookings]);
+
+  // Handle tab change
+  const handleTabChange = (tab: TabType) => {
+    setActiveTab(tab);
+  };
+  
+  // Filter bookings based on active tab
+  const filteredBookings = bookings.filter(booking => {
+    const status = booking.status.toLowerCase();
+    switch(activeTab) {
+      case 'Active':
+        return status === 'active';
+      case 'Completed':
+        return status === 'completed';
+      case 'Cancelled':
+        return status === 'cancelled';
+      default:
+        return true;
+    }
+  });
 
   const handleCancelBooking = (booking: Booking) => {
     setCancelBookingData(booking);
@@ -119,7 +144,9 @@ export const MyBookings = () => {
   if (error) {
     return <div className="bookings-error">Error: {error}</div>;
   }
-  
+  // Show custom message when there are bookings but none match the current filter
+  const showNoFilteredResults = bookings.length > 0 && filteredBookings.length === 0;
+
   if (bookings.length === 0) {
     return (
       <div className="no-bookings">
@@ -133,39 +160,67 @@ export const MyBookings = () => {
     <div className="my-bookings">
       <h2>My Bookings</h2>
       
-      <div className="bookings-list">
-        {bookings.map(booking => (
-          <div className="booking-card" key={booking.id}>
-            <div className="booking-header">
-              <h3>{booking.pickup} to {booking.destination}</h3>
-              <span className={`booking-status ${booking.status.toLowerCase()}`}>
-                {booking.status}
-              </span>
-            </div>
-            
-            <div className="booking-details">
-              <p><strong>Departure:</strong> {new Date(booking.departureTime * 1000).toLocaleString()}</p>
-              <p><strong>Seats:</strong> {booking.bookedSeats}</p>
-              <p><strong>Total Cost:</strong> {(Number(booking.pricePerSeat) * booking.bookedSeats).toFixed(6)} ETH</p>
-              <p><strong>Driver:</strong> {`${booking.driver.substring(0, 6)}...${booking.driver.substring(38)}`}</p>
-              <p><strong>Payment Status:</strong> {booking.isPaid ? "Paid" : "Unpaid"}</p>
-            </div>
-            
-            <div className="booking-actions">
-              {booking.status.toLowerCase() !== 'cancelled' && (
+      {/* Tab navigation */}
+      <div className="booking-tabs">
+        <button 
+          className={`tab-btn ${activeTab === 'Active' ? 'active' : ''}`}
+          onClick={() => handleTabChange('Active')}
+        >
+          Active
+        </button>
+        <button 
+          className={`tab-btn ${activeTab === 'Completed' ? 'active' : ''}`}
+          onClick={() => handleTabChange('Completed')}
+        >
+          Completed
+        </button>
+        <button 
+          className={`tab-btn ${activeTab === 'Cancelled' ? 'active' : ''}`}
+          onClick={() => handleTabChange('Cancelled')}
+        >
+          Cancelled
+        </button>
+      </div>
+      
+      {showNoFilteredResults ? (
+        <div className="no-filtered-bookings">
+          <p>No {activeTab.toLowerCase()} bookings found.</p>
+        </div>
+      ) : (
+        <div className="bookings-list">
+          {filteredBookings.map(booking => (
+            <div className="booking-card" key={booking.id}>
+              <div className="booking-header">
+                <h3>{booking.pickup} to {booking.destination}</h3>
+                <span className={`booking-status ${booking.status.toLowerCase()}`}>
+                  {booking.status}
+                </span>
+              </div>
+              
+              <div className="booking-details">
+                <p><strong>Departure:</strong> {new Date(booking.departureTime * 1000).toLocaleString()}</p>
+                <p><strong>Seats:</strong> {booking.bookedSeats}</p>
+                <p><strong>Total Cost:</strong> {(Number(booking.pricePerSeat) * booking.bookedSeats).toFixed(6)} ETH</p>
+                <p><strong>Driver:</strong> {`${booking.driver.substring(0, 6)}...${booking.driver.substring(38)}`}</p>
+                <p><strong>Payment Status:</strong> {booking.isPaid ? "Paid" : "Unpaid"}</p>
+              </div>
+              
+              <div className="booking-actions">
+                {booking.status.toLowerCase() === 'active' && (
                   <button 
                     className="action-btn"
                     onClick={() => handleCancelBooking(booking)}
-                    disabled={booking.status.toLowerCase() === 'completed'}
                   >
                     Cancel Booking
                   </button>
                 )}
-              <button className="action-btn">Contact Driver</button>
+                <button className="action-btn">Contact Driver</button>
+              </div>
             </div>
-          </div>
-        ))}
-      </div>
+          ))}
+        </div>
+      )}
+      
       {cancelBookingData && (
         <CancelBookingModal
           booking={cancelBookingData}

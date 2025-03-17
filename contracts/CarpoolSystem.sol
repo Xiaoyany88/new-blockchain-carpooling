@@ -113,20 +113,23 @@ contract CarpoolSystem {
         require(isActive, "Ride is not active");
         require(departureTime > block.timestamp, "Ride already departed");
         
+        // Get the seats count for this booking
+        uint256 seats = rideOffer.getBookingSeats(_rideId, passenger);
+        require(seats > 0, "No seats booked for this ride");
+        
         // If cancellation is within 24 hours, payment goes to driver
         // If more than 24 hours before, refund passenger
         if (_isWithin24Hours) {
             // Transfer payment to driver using releasePayment
             paymentEscrow.releasePayment(_rideId, payable(driver), passenger);
+            // Cancel the booking in RideOffer (NOT refunded)
+            rideOffer.cancelBookingFromSystem(_rideId, passenger, seats, false);
         } else {
             // Refund payment to passenger
             paymentEscrow.refundPayment(_rideId, passenger);
+            // Cancel the booking in RideOffer (refunded)
+            rideOffer.cancelBookingFromSystem(_rideId, passenger, seats, true);
         }
-        // Get the seats count for this booking
-        uint256 seats = rideOffer.getBookingSeats(_rideId, passenger);
-        
-        // Cancel the booking in RideOffer
-        rideOffer.cancelBookingFromSystem(_rideId, passenger, seats);
         
         emit BookingCancelled(_rideId, passenger, seats, !_isWithin24Hours);
     }

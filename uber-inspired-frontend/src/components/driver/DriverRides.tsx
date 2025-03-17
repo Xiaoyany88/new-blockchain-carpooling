@@ -21,8 +21,11 @@ type Ride = {
     seats: number;
     paid: boolean;
     completed: boolean;
+    cancelled: boolean;
+    paidToDriver: boolean;
   }[];
   isActive: boolean;
+  cancelledSeatsWithPayment: number; // New field to track cancelled seats with payment to driver
 };
 
 export const DriverRides = () => {
@@ -51,7 +54,7 @@ export const DriverRides = () => {
           [
             'function getRideCount() external view returns (uint256)',
             'function getRide(uint256) external view returns (address, string, string, uint256, uint256, uint256, uint256, string, bool)',
-            'function getBookingsByRide(uint256) external view returns (tuple(address passenger, uint256 rideId, uint256 seats, bool paid, bool completed)[])'
+            'function getBookingsByRide(uint256) external view returns (tuple(address passenger, uint256 rideId, uint256 seats, bool paid, bool completed, bool cancelled, bool paidToDriver)[])'
           ],
           signer
         );
@@ -61,7 +64,16 @@ export const DriverRides = () => {
         console.log("Total rides in system:", rideCount.toString());
         
         // Create array of ride IDs to check (from 0 to rideCount-1)
-        const allRideIds = Array.from({ length: rideCount.toNumber() }, (_, i) => i);
+        // Use the safer toNumber() method with try/catch
+        let rideCountNumber;
+        try {
+          rideCountNumber = rideCount.toNumber();
+        } catch (err) {
+          console.warn("RideCount is too large for toNumber(), using a safe maximum");
+          rideCountNumber = 1000; // Use a reasonable maximum value
+        }
+        
+        const allRideIds = Array.from({ length: rideCountNumber }, (_, i) => i);
         
         // Filter and fetch details for rides where the user is the driver
         const driverRidesPromises = allRideIds.map(async (id: number) => {
@@ -76,17 +88,39 @@ export const DriverRides = () => {
               // Get all bookings for this ride
               const bookings = await rideOfferContract.getBookingsByRide(id);
               
-              // Calculate total booked seats
+              // Calculate total booked seats (excluding cancelled bookings)
               let totalBookedSeats = 0;
+              let cancelledSeatsWithPayment = 0;
               const passengers = bookings.map((booking: any) => {
-                totalBookedSeats += booking.seats.toNumber();
+                // Use a safe conversion with fallbacks
+                let seatCount = 0;
+                try {
+                  seatCount = booking.seats.toNumber();
+                } catch (err) {
+                  console.warn(`Overflow when converting seats for booking, using string: ${booking.seats.toString()}`);
+                  // Use a safe default value or the string representation
+                  seatCount = parseInt(booking.seats.toString()) || 1;
+                }
+                
+                // Only count active bookings in the total booked seats
+                if (booking.paid && !booking.cancelled) {
+                  totalBookedSeats += seatCount;
+                }
+                
+                // Track cancelled bookings with payment to driver
+                if (booking.cancelled && booking.paidToDriver) {
+                  cancelledSeatsWithPayment += seatCount;
+                }
                 return {
                   address: booking.passenger,
-                  seats: booking.seats.toNumber(),
+                  seats: seatCount,
                   paid: booking.paid,
-                  completed: booking.completed
+                  completed: booking.completed,
+                  cancelled: booking.cancelled || false, // For backward compatibility
+                  paidToDriver: booking.paidToDriver || false // For backward compatibility
                 };
               });
+              
               
               // Extract other ride details
               const pickup = rideDetails[1];
@@ -110,6 +144,7 @@ export const DriverRides = () => {
                 additionalNotes,
                 isActive,
                 totalBookedSeats,
+                cancelledSeatsWithPayment,
                 passengers
               };
             }
@@ -314,9 +349,21 @@ export const DriverRides = () => {
             
             <div className="ride-details">
               <p><strong>Departure:</strong> {new Date(ride.departureTime * 1000).toLocaleString()}</p>
-              <p><strong>Seats:</strong> {ride.totalBookedSeats} booked of {ride.maxPassengers} total</p>
+              <p>
+                <strong>Seats:</strong> {ride.totalBookedSeats} booked of {ride.maxPassengers} total
+                {ride.passengers.some(p => p.cancelled) && (
+                  <span className="seats-note"> ({ride.passengers.filter(p => p.cancelled).reduce((acc, p) => acc + p.seats, 0)} cancelled)</span>
+                )}
+              </p>
               <p><strong>Price:</strong> {ride.pricePerSeat} ETH per seat</p>
-              <p><strong>Total Potential Earnings:</strong> {(Number(ride.pricePerSeat) * ride.totalBookedSeats).toFixed(6)} ETH</p>
+              <p>
+                <strong>Active Bookings Value:</strong> {(Number(ride.pricePerSeat) * ride.totalBookedSeats).toFixed(6)} ETH
+              </p>
+              {ride.cancelledSeatsWithPayment > 0 && (
+                <p className="earnings-note">
+                  <strong>+ {(Number(ride.pricePerSeat) * ride.cancelledSeatsWithPayment).toFixed(6)} ETH</strong> from late cancellations
+                </p>
+              )}
             </div>
             
             {ride.passengers.length > 0 && (
@@ -324,19 +371,28 @@ export const DriverRides = () => {
                 <h4>Passengers</h4>
                 <div className="passengers-list">
                   {ride.passengers.map(passenger => (
-                    <div className="passenger-item" key={passenger.address}>
+                    <div 
+                      className={`passenger-item ${passenger.cancelled ? 'cancelled' : passenger.completed ? 'completed' : ''}`} 
+                      key={passenger.address}
+                    >
                       <div className="passenger-info">
                         <p className="passenger-address">
                           {`${passenger.address.substring(0, 6)}...${passenger.address.substring(38)}`}
                         </p>
                         <p className="passenger-seats">Seats: {passenger.seats}</p>
-                        <p className="payment-status">
-                          {passenger.paid ? 'Paid' : 'Unpaid'}
+                        <p className={`payment-status ${
+                          passenger.cancelled ? (passenger.paidToDriver ? 'paid-to-driver' : 'refunded') : 
+                          passenger.paid ? 'paid' : 'unpaid'}`}
+                        >
+                          {passenger.cancelled 
+                            ? (passenger.paidToDriver ? '✓ Payment received' : '✗ Booking cancelled & refunded')
+                            : (passenger.paid ? (passenger.completed ? '✓ Payment received' : 'Paid') : 'Unpaid')
+                          }
                         </p>
                       </div>
                       
                       <div className="passenger-actions">
-                        {ride.isActive && passenger.paid && !passenger.completed && (
+                        {ride.isActive && passenger.paid && !passenger.completed && !passenger.cancelled && (
                           <button 
                             className="complete-button"
                             onClick={() => handleCompleteRide(ride.id, passenger.address)}
@@ -346,8 +402,16 @@ export const DriverRides = () => {
                           </button>
                         )}
                         
-                        {passenger.completed && (
-                          <span className="completed-label">Completed</span>
+                        {passenger.completed && !passenger.cancelled && (
+                          <span className="status-tag completed-tag">Ride Completed</span>
+                        )}
+                        
+                        {passenger.cancelled && passenger.paidToDriver && (
+                          <span className="status-tag cancelled-paid-tag">Late Cancellation</span>
+                        )}
+                        
+                        {passenger.cancelled && !passenger.paidToDriver && (
+                          <span className="status-tag cancelled-tag">Cancelled</span>
                         )}
                       </div>
                     </div>

@@ -139,7 +139,11 @@ const useCarpoolSystem = (provider: ethers.providers.Web3Provider | null) => {
           departureTime: ride.departureTime.toNumber(),
           pricePerSeat: ethers.utils.formatEther(ride.pricePerSeat),
           bookedSeats: userBooking ? userBooking.seats.toNumber() : 0,
-          status: userBooking ? (userBooking.completed ? "Completed" : "Active") : "Unknown",
+          // Add cancellation check FIRST:
+          status: userBooking ? 
+          (userBooking.cancelled ? "Cancelled" : 
+          userBooking.completed ? "Completed" : "Active") 
+          : "Unknown",
           isPaid: userBooking ? userBooking.paid : false
         };
       });

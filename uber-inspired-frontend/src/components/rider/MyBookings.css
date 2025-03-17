@@ -128,3 +128,54 @@
   .no-bookings p {
     color: #6B7280;
   }
+
+  /* Add to MyBookings.css */
+.booking-tabs {
+  display: flex;
+  margin-bottom: 24px;
+  border-bottom: 1px solid #e5e7eb;
+}
+
+.tab-btn {
+  padding: 12px 24px;
+  background: none;
+  border: none;
+  border-bottom: 3px solid transparent;
+  font-size: 16px;
+  cursor: pointer;
+  color: #6b7280;
+  transition: all 0.2s;
+}
+
+.tab-btn:hover {
+  color: #111827;
+}
+
+.tab-btn.active {
+  color: #3b82f6;
+  border-bottom: 3px solid #3b82f6;
+  font-weight: 600;
+}
+
+.no-filtered-bookings {
+  text-align: center;
+  padding: 32px 0;
+  color: #6b7280;
+  font-size: 16px;
+}
+
+/* Status colors */
+.booking-status.active {
+  background-color: #dbeafe;
+  color: #1e40af;
+}
+
+.booking-status.completed {
+  background-color: #d1fae5;
+  color: #065f46;
+}
+
+.booking-status.cancelled {
+  background-color: #fee2e2;
+  color: #b91c1c;
+}

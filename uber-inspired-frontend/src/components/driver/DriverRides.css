@@ -263,3 +263,65 @@ color: #6B7280;
     align-items: flex-start; /* This aligns the button to the left */
     width: 100%;
   }
+
+  /* Add to DriverRides.css */
+.passenger-item.cancelled {
+  opacity: 0.85;
+  background-color: #f3f4f6;
+}
+
+.passenger-item.completed {
+  background-color: #f0fdf4;
+}
+
+.payment-status {
+  font-weight: 500;
+}
+
+.payment-status.paid-to-driver {
+  color: #047857;
+}
+
+.payment-status.refunded {
+  color: #6b7280;
+  font-style: italic;
+}
+
+.status-tag {
+  display: inline-block;
+  padding: 4px 8px;
+  border-radius: 4px;
+  font-size: 12px;
+  font-weight: 500;
+}
+
+.completed-tag {
+  background-color: #d1fae5;
+  color: #047857;
+}
+
+.cancelled-paid-tag {
+  background-color: #fef3c7;
+  color: #92400e;
+}
+
+.cancelled-tag {
+  background-color: #f3f4f6;
+  color: #6b7280;
+}
+
+.seats-note {
+  font-size: 14px;
+  color: #6b7280;
+  font-style: italic;
+  margin-left: 5px;
+}
+
+.earnings-note {
+  margin-top: 5px;
+  padding: 8px;
+  background-color: #f0fdf4;
+  border-radius: 6px;
+  color: #047857;
+  display: inline-block;
+}

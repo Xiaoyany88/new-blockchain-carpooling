@@ -30,6 +30,12 @@
         "internalType": "uint256",
         "name": "seats",
         "type": "uint256"
+      },
+      {
+        "indexed": false,
+        "internalType": "bool",
+        "name": "refunded",
+        "type": "bool"
       }
     ],
     "name": "BookingCancelled",
@@ -265,6 +271,16 @@
         "internalType": "bool",
         "name": "completed",
         "type": "bool"
+      },
+      {
+        "internalType": "bool",
+        "name": "cancelled",
+        "type": "bool"
+      },
+      {
+        "internalType": "bool",
+        "name": "paidToDriver",
+        "type": "bool"
       }
     ],
     "stateMutability": "view",
@@ -286,6 +302,11 @@
         "internalType": "uint256",
         "name": "_seats",
         "type": "uint256"
+      },
+      {
+        "internalType": "bool",
+        "name": "_refunded",
+        "type": "bool"
       }
     ],
     "name": "cancelBookingFromSystem",
@@ -484,6 +505,16 @@
           {
             "internalType": "bool",
             "name": "completed",
+            "type": "bool"
+          },
+          {
+            "internalType": "bool",
+            "name": "cancelled",
+            "type": "bool"
+          },
+          {
+            "internalType": "bool",
+            "name": "paidToDriver",
             "type": "bool"
           }
         ],
