@@ -54,7 +54,7 @@ export const DriverDashboard = () => {
           <CreateRideForm onSuccess={handleBackToDashboard} />
         </div>
       ) : showRides ? (
-        <div className="rides-container">
+        <>
           <button 
             className="back-button"
             onClick={handleBackToDashboard}
@@ -62,7 +62,7 @@ export const DriverDashboard = () => {
             ← Back to Dashboard
           </button>
           <DriverRides />
-        </div>
+        </>
       ) : (
         <div className="dashboard-grid">
           <div className="dashboard-card">

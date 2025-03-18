@@ -5,6 +5,7 @@ import useProvider from '../../hooks/useProvider';
 import useRideOffer from '../../hooks/useRideOffer';
 import useCarpoolSystem from '../../hooks/useCarpoolSystem';
 import { CONTRACT_ADDRESSES, SUPPORTED_CHAIN_ID } from '../../config/contracts';
+import { MessagingModal } from '../common/MessagingModal'; // Adjust the path as needed
 import './DriverRides.css';
 
 type Ride = {
@@ -30,12 +31,30 @@ type Ride = {
 
 export const DriverRides = () => {
   const provider = useProvider();
-  const { getRide, getAvailableRides } = useRideOffer(provider);
   const carpoolSystem = useCarpoolSystem(provider);
   const [rides, setRides] = useState<Ride[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
   const [completingRide, setCompletingRide] = useState<Record<string, boolean>>({});
+  // Add state for messaging
+  const [activeMessageRide, setActiveMessageRide] = useState<{rideId: number, passengerAddress: string} | null>(null);
+  const [userAddress, setUserAddress] = useState<string>('');
+  // fetch and store user's address
+  useEffect(() => {
+    const fetchUserAddress = async () => {
+      if (provider) {
+        try {
+          const signer = provider.getSigner();
+          const address = await signer.getAddress();
+          setUserAddress(address);
+        } catch (err) {
+          console.error("Failed to get user address:", err);
+        }
+      }
+    };
+    
+    fetchUserAddress();
+  }, [provider]);
 
   useEffect(() => {
     const fetchDriverRides = async () => {
@@ -340,6 +359,15 @@ export const DriverRides = () => {
       setCompletingRide(prev => ({ ...prev, [key]: false }));
     }
   };
+  // Add handler functions
+  const handleOpenChat = (rideId: number, passengerAddress: string) => {
+    setActiveMessageRide({rideId, passengerAddress});
+  };
+
+  const handleCloseChat = () => {
+    setActiveMessageRide(null);
+  };
+
   
   if (loading) {
     return <div className="rides-loading">Loading your rides...</div>;
@@ -442,6 +470,15 @@ export const DriverRides = () => {
                         {passenger.cancelled && !passenger.paidToDriver && (
                           <span className="status-tag cancelled-tag">Cancelled</span>
                         )}
+
+                        {!passenger.cancelled && !passenger.completed && (
+                          <button
+                            className="message-button"
+                            onClick={() => handleOpenChat(ride.id, passenger.address)}
+                          >
+                            Message Passenger
+                          </button>
+                        )}
                       </div>
                     </div>
                   ))}
@@ -449,12 +486,20 @@ export const DriverRides = () => {
               </div>
             )}
             
-            <div className="ride-actions">
-              {/* Add cancel ride button if needed */}
-            </div>
+            
+            
           </div>
         ))}
       </div>
+      {activeMessageRide && (
+        <MessagingModal
+          rideId={activeMessageRide.rideId}
+          driverAddress={userAddress}
+          passengerAddress={activeMessageRide.passengerAddress}
+          isDriver={true}
+          onClose={handleCloseChat}
+        />
+      )}
     </div>
   );
 };

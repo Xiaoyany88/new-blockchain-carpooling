@@ -43,13 +43,14 @@
   .search-form {
     display: grid;
     grid-template-columns: repeat(auto-fill, minmax(200px, 1fr));
-    gap: 16px;
+    gap: 30px;
     align-items: end;
   }
   
   .form-group {
     display: flex;
     flex-direction: column;
+    
   }
   
   label {

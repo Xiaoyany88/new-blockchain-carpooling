@@ -344,6 +344,7 @@ export const MyBookings = () => {
           rideId={activeMessageRide.id}
           driverAddress={activeMessageRide.driver}
           passengerAddress={userAddress}
+          isDriver={false} // passenger view
           onClose={handleCloseChat}
         />
       )}

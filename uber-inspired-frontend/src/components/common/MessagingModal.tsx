@@ -1,5 +1,12 @@
+// src/components/common/MessagingModal.tsx
 import { useState, useEffect, useRef } from 'react';
 import './MessagingModal.css';
+import { 
+  sendMessage, 
+  getMessageHistory, 
+  subscribeToMessages,
+  Message as MessageType
+} from '../../services/messageService';
 
 type Message = {
   id: string;
@@ -13,6 +20,7 @@ type MessagingModalProps = {
   rideId: number;
   driverAddress: string;
   passengerAddress: string;
+  isDriver: boolean; // Add this to identify if current user is driver or passenger
   onClose: () => void;
 };
 
@@ -20,30 +28,36 @@ export const MessagingModal = ({
   rideId, 
   driverAddress, 
   passengerAddress,
+  isDriver,
   onClose 
 }: MessagingModalProps) => {
   const [messages, setMessages] = useState<Message[]>([]);
   const [messageInput, setMessageInput] = useState('');
   const [loading, setLoading] = useState(true);
   const messagesEndRef = useRef<HTMLDivElement>(null);
+
+  // Current user is either driver or passenger
+  const currentUserAddress = isDriver ? driverAddress : passengerAddress;
+  // The other party in the conversation
+  const otherUserAddress = isDriver ? passengerAddress : driverAddress;
   
   // Fetch message history on component mount
   useEffect(() => {
     const fetchMessages = async () => {
       try {
-        // For now, simulate message history
-        // In a real app, you would fetch from your backend or messaging service
-        const mockMessages: Message[] = [
-          {
-            id: '1',
-            sender: driverAddress,
-            content: "Hello! I'll be your driver for the trip. Looking forward to meeting you!",
-            timestamp: Date.now() - 60000 * 15,
-            isFromMe: false
-          }
-        ];
+        setLoading(true);
+        const history = await getMessageHistory(rideId, currentUserAddress, otherUserAddress);
         
-        setMessages(mockMessages);
+        // Transform to UI format
+        const formattedMessages = history.map(msg => ({
+          id: msg.id,
+          sender: msg.sender,
+          content: msg.content,
+          timestamp: msg.timestamp.getTime(),
+          isFromMe: msg.sender.toLowerCase() === currentUserAddress.toLowerCase()
+        }));
+        
+        setMessages(formattedMessages);
       } catch (error) {
         console.error('Failed to load messages:', error);
       } finally {
@@ -52,41 +66,53 @@ export const MessagingModal = ({
     };
     
     fetchMessages();
-  }, [driverAddress, passengerAddress, rideId]);
+    
+    // Subscribe to new messages
+    const unsubscribe = subscribeToMessages(
+      rideId,
+      currentUserAddress,
+      otherUserAddress,
+      (updatedMessages) => {
+        const formattedMessages = updatedMessages.map(msg => ({
+          id: msg.id,
+          sender: msg.sender,
+          content: msg.content,
+          timestamp: msg.timestamp.getTime(),
+          isFromMe: msg.sender.toLowerCase() === currentUserAddress.toLowerCase()
+        }));
+        
+        setMessages(formattedMessages);
+      }
+    );
+    
+    // Clean up subscription when component unmounts
+    return () => {
+      unsubscribe();
+    };
+  }, [rideId, currentUserAddress, otherUserAddress]);
   
   // Scroll to bottom of messages when new ones arrive
   useEffect(() => {
     messagesEndRef.current?.scrollIntoView({ behavior: 'smooth' });
   }, [messages]);
   
-  const handleSendMessage = () => {
+  const handleSendMessage = async () => {
     if (!messageInput.trim()) return;
     
-    // Create a new message
-    const newMessage: Message = {
-      id: Date.now().toString(),
-      sender: passengerAddress,
-      content: messageInput,
-      timestamp: Date.now(),
-      isFromMe: true
-    };
-    
-    // In a real app, send to backend/messaging service
-    // For now, just update local state
-    setMessages(prevMessages => [...prevMessages, newMessage]);
-    setMessageInput('');
-    
-    // Simulate driver response after a delay
-    setTimeout(() => {
-      const driverResponse: Message = {
-        id: (Date.now() + 1).toString(),
-        sender: driverAddress,
-        content: 'Got it! See you at the pickup point.',
-        timestamp: Date.now(),
-        isFromMe: false
-      };
-      setMessages(prevMessages => [...prevMessages, driverResponse]);
-    }, 3000);
+    try {
+      // Send message to Firebase
+      await sendMessage(
+        rideId,
+        currentUserAddress,
+        otherUserAddress,
+        messageInput
+      );
+      
+      setMessageInput('');
+    } catch (error) {
+      console.error('Failed to send message:', error);
+      alert('Failed to send message. Please try again.');
+    }
   };
   
   const formatTime = (timestamp: number) => {
@@ -98,7 +124,7 @@ export const MessagingModal = ({
     <div className="messaging-modal-overlay">
       <div className="messaging-modal">
         <div className="messaging-header">
-          <h3>Chat with Driver</h3>
+          <h3>Chat with {isDriver ? 'Passenger' : 'Driver'}</h3>
           <button className="close-button" onClick={onClose}>✕</button>
         </div>
         
