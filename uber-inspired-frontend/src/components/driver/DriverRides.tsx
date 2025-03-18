@@ -130,8 +130,26 @@ export const DriverRides = () => {
               const pricePerSeat = ethers.utils.formatEther(rideDetails[5]);
               const availableSeats = rideDetails[6].toNumber();
               const additionalNotes = rideDetails[7];
-              const isActive = rideDetails[8];
+              const contractIsActive = rideDetails[8];
+
+              // Calculate isActive using the same logic as handleCompleteRide
+              const activePassengers = passengers.filter((p: Ride['passengers'][0]) => !p.cancelled);
+              const allActiveCompleted = activePassengers.length > 0 && 
+                                        activePassengers.every((p: Ride['passengers'][0]) => p.completed);
               
+              // Get current time in seconds
+              const currentTime = Math.floor(Date.now() / 1000);
+              // Check if departure is in the future
+              const isDepartureInFuture = departureTime > currentTime;
+
+              // Determine ride active status with the edge case:
+              // 1. If there are active passengers and they're all completed, mark as completed (!isActive)
+              // 2. If there are no active passengers (all cancelled):
+              //    a. If departure is still in the future, show as active
+              //    b. If departure time has passed, use the contract value
+              const isActive = activePassengers.length > 0 
+              ? !allActiveCompleted 
+              : (isDepartureInFuture ? true : false);
               return {
                 id,
                 driver: driverAddress,
@@ -290,13 +308,24 @@ export const DriverRides = () => {
               return passenger;
             });
             
-            // Mark ride as inactive if all passengers completed
-            const allCompleted = updatedPassengers.every(p => p.completed);
+            // only consider non-cancelled passengers when determining completion
+            const activePassengers = updatedPassengers.filter((p: Ride['passengers'][0]) => !p.cancelled);
+            const allActiveCompleted = activePassengers.length > 0 && 
+                                    activePassengers.every(p => p.completed);
+            // Get current time in seconds
+            const currentTime = Math.floor(Date.now() / 1000);
+            // Check if departure is in the future
+            const isDepartureInFuture = ride.departureTime > currentTime;
             
+            // Apply the same logic as in fetchDriverRides
+            const isActive = activePassengers.length > 0 
+              ? !allActiveCompleted 
+              : (isDepartureInFuture ? true : false); // Assuming a ride with no active passengers after completion should be inactive
+                  
             return {
               ...ride,
               passengers: updatedPassengers,
-              isActive: !allCompleted
+              isActive: isActive // Assuming a ride with no active passengers after completion should be inactive
             };
           }
           return ride;
@@ -351,8 +380,8 @@ export const DriverRides = () => {
               <p><strong>Departure:</strong> {new Date(ride.departureTime * 1000).toLocaleString()}</p>
               <p>
                 <strong>Seats:</strong> {ride.totalBookedSeats} booked of {ride.maxPassengers} total
-                {ride.passengers.some(p => p.cancelled) && (
-                  <span className="seats-note"> ({ride.passengers.filter(p => p.cancelled).reduce((acc, p) => acc + p.seats, 0)} cancelled)</span>
+                {ride.passengers.some((p: Ride['passengers'][0]) => p.cancelled) && (
+                  <span className="seats-note"> ({ride.passengers.filter((p: Ride['passengers'][0]) => p.cancelled).reduce((acc, p: Ride['passengers'][0]) => acc + p.seats, 0)} cancelled)</span>
                 )}
               </p>
               <p><strong>Price:</strong> {ride.pricePerSeat} ETH per seat</p>
