@@ -3,6 +3,7 @@ import useProvider from '../../hooks/useProvider';
 import useCarpoolSystem from '../../hooks/useCarpoolSystem';
 import { CancelBookingModal } from './CancelBookingModal';
 import { MessagingModal } from '../common/MessagingModal';
+import { RateDriverModal } from './RateDriverModal';
 import './MyBookings.css';
 // Tab options
 type TabType = 'Active' | 'Completed' | 'Cancelled';
@@ -20,11 +21,12 @@ type Booking = {
   isPaid: boolean;
   isCancelled?: boolean;
   timestamp?: number;     // When the booking was created
+  hasRated?: boolean;     // If the user has rated the driver
 };
 
 export const MyBookings = () => {
   const provider = useProvider();
-  const { getUserBookings, cancelBookingFromSystem } = useCarpoolSystem(provider);
+  const { getUserBookings, cancelBookingFromSystem, rateDriver } = useCarpoolSystem(provider);
   const [bookings, setBookings] = useState<Booking[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
@@ -35,6 +37,9 @@ export const MyBookings = () => {
   const [activeTab, setActiveTab] = useState<TabType>('Active');
   const [activeMessageRide, setActiveMessageRide] = useState<Booking | null>(null);
   const [userAddress, setUserAddress] = useState<string>('');
+  const [rateDriverData, setRateDriverData] = useState<Booking | null>(null);
+  const [isRating, setIsRating] = useState(false);
+  const [ratingResult, setRatingResult] = useState<{success: boolean; message: string} | null>(null);
   // Add this effect to get the user address once
   useEffect(() => {
     const getUserAddress = async () => {
@@ -228,6 +233,52 @@ export const MyBookings = () => {
     setActiveMessageRide(null);
   };
 
+  const handleRateDriver = (booking: Booking) => {
+    setRateDriverData(booking);
+  };
+  
+  const handleCloseRatingModal = () => {
+    setRateDriverData(null);
+    setRatingResult(null);
+  };
+
+  const handleSubmitRating = async (rideId: number, driverAddress: string, rating: number) => {
+    if (!rateDriver) return;
+    
+    try {
+      setIsRating(true);
+      const result = await rateDriver(rideId, driverAddress, rating);
+      
+      if (result.success) {
+        setRatingResult({
+          success: true,
+          message: `Thank you! You've rated this driver ${rating} stars.`
+        });
+        
+        // Update local state to reflect that this ride has been rated
+        setBookings(prevBookings => prevBookings.map(booking => {
+          if (booking.id === rideId && booking.driver === driverAddress) {
+            return { ...booking, hasRated: true };
+          }
+          return booking;
+        }));
+      } else {
+        setRatingResult({
+          success: false,
+          message: result.error || "Failed to submit rating"
+        });
+      }
+    } catch (err: any) {
+      console.error("Error submitting rating:", err);
+      setRatingResult({
+        success: false,
+        message: err.message || "An unexpected error occurred"
+      });
+    } finally {
+      setIsRating(false);
+    }
+  };
+
   if (loading) {
     return <div className="bookings-loading">Loading your bookings...</div>;
   }
@@ -324,6 +375,14 @@ export const MyBookings = () => {
                     Contact Driver
                   </button>
                 )}
+                {booking.status.toLowerCase() === 'completed' && !booking.hasRated && (
+                  <button 
+                    className="action-btn rate-btn"
+                    onClick={() => handleRateDriver(booking)}
+                  >
+                    Rate Driver
+                  </button>
+                )}
               </div>
             </div>
           ))}
@@ -346,6 +405,16 @@ export const MyBookings = () => {
           passengerAddress={userAddress}
           isDriver={false} // passenger view
           onClose={handleCloseChat}
+        />
+      )}
+      {rateDriverData && (
+        <RateDriverModal
+          driverAddress={rateDriverData.driver}
+          rideId={rateDriverData.id}
+          onClose={handleCloseRatingModal}
+          onSubmit={handleSubmitRating}
+          isProcessing={isRating}
+          result={ratingResult}
         />
       )}
       

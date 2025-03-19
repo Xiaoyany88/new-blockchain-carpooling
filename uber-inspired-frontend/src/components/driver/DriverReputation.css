@@ -1,0 +1,125 @@
+/* src/components/driver/DriverReputation.css */
+.driver-reputation {
+    max-width: 900px;
+    margin: 0 auto;
+    padding: 20px;
+  }
+  
+  .driver-reputation h2 {
+    margin-bottom: 24px;
+    font-size: 28px;
+    text-align: center;
+  }
+  
+  .reputation-stats {
+    display: grid;
+    grid-template-columns: repeat(auto-fill, minmax(200px, 1fr));
+    gap: 20px;
+    margin-bottom: 30px;
+  }
+  
+  .stat-card {
+    background-color: white;
+    border-radius: 10px;
+    box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
+    padding: 20px;
+    text-align: center;
+  }
+  
+  .stat-card h3 {
+    margin-top: 0;
+    margin-bottom: 15px;
+    font-size: 16px;
+    color: #444;
+  }
+  
+  .stat-value {
+    font-size: 32px;
+    font-weight: bold;
+    color: #333;
+  }
+  
+  .rating-display {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+  }
+  
+  .rating-number {
+    font-size: 32px;
+    font-weight: bold;
+    color: #333;
+    margin-bottom: 5px;
+  }
+  
+  .star-rating {
+    font-size: 24px;
+  }
+  
+  .star {
+    color: #ddd;
+    margin: 0 2px;
+  }
+  
+  .star.filled {
+    color: #ffc107;
+  }
+  
+  .reputation-details {
+    background-color: white;
+    border-radius: 10px;
+    box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
+    padding: 24px;
+    margin-top: 20px;
+  }
+  
+  .reputation-details h3 {
+    margin-top: 0;
+    margin-bottom: 16px;
+    font-size: 20px;
+    color: #333;
+  }
+  
+  .reputation-details ul {
+    margin-bottom: 20px;
+    padding-left: 20px;
+  }
+  
+  .reputation-details li {
+    margin-bottom: 10px;
+    line-height: 1.5;
+  }
+  
+  .reputation-tip {
+    background-color: #f8f9fa;
+    padding: 15px;
+    border-left: 4px solid #4F46E5;
+    border-radius: 0 5px 5px 0;
+    margin-top: 20px;
+  }
+  
+  .loading, .error, .no-data {
+    text-align: center;
+    padding: 40px 20px;
+  }
+  
+  .error {
+    color: #dc2626;
+  }
+  
+  /* Stat card colors */
+  .stat-card.rating {
+    border-top: 4px solid #4F46E5;
+  }
+  
+  .stat-card.rides {
+    border-top: 4px solid #10B981;
+  }
+  
+  .stat-card.completion {
+    border-top: 4px solid #F59E0B;
+  }
+  
+  .stat-card.cancellations {
+    border-top: 4px solid #EF4444;
+  }

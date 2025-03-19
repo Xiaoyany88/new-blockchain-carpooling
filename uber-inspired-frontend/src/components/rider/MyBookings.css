@@ -179,3 +179,14 @@
   background-color: #fee2e2;
   color: #b91c1c;
 }
+
+/* Add to MyBookings.css */
+.rate-btn {
+  background-color: #805ad5;
+  color: white;
+  border: none;
+}
+
+.rate-btn:hover {
+  background-color: #6b46c1;
+}

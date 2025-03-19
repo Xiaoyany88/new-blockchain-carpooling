@@ -3,6 +3,7 @@ import { useEffect, useState } from 'react';
 import useProvider from '../hooks/useProvider';
 import { CreateRideForm } from '../components/driver/CreateRideForm';
 import { DriverRides } from '../components/driver/DriverRides';
+import { DriverReputation } from '../components/driver/DriverReputation';
 import './DriverDashboard.css';
 
 export const DriverDashboard = () => {
@@ -10,6 +11,7 @@ export const DriverDashboard = () => {
   const [isConnected, setIsConnected] = useState(false);
   const [showCreateForm, setShowCreateForm] = useState(false);
   const [showRides, setShowRides] = useState(false);
+  const [showReputation, setShowReputation] = useState(false);
   
   useEffect(() => {
     const checkConnection = async () => {
@@ -37,6 +39,7 @@ export const DriverDashboard = () => {
   const handleBackToDashboard = () => {
     setShowCreateForm(false);
     setShowRides(false);
+    setShowReputation(false);
   };
   
   return (
@@ -62,6 +65,16 @@ export const DriverDashboard = () => {
             ← Back to Dashboard
           </button>
           <DriverRides />
+        </>
+      ) : showReputation ? ( // Add this condition
+        <>
+          <button 
+            className="back-button"
+            onClick={handleBackToDashboard}
+          >
+            ← Back to Dashboard
+          </button>
+          <DriverReputation />
         </>
       ) : (
         <div className="dashboard-grid">
@@ -96,7 +109,12 @@ export const DriverDashboard = () => {
           <div className="dashboard-card">
             <h2>Your Reputation</h2>
             <p>View your driver ratings and feedback</p>
-            <button className="dashboard-btn">View Reputation</button>
+            <button 
+              className="dashboard-btn"
+              onClick={() => setShowReputation(true)} // Add this handler
+            >
+              View Reputation
+            </button>
           </div>
         </div>
       )}

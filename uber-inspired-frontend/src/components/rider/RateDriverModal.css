@@ -1,0 +1,99 @@
+.rate-driver-modal {
+    max-width: 450px;
+  }
+  
+  .rate-driver-modal h2 {
+    margin-top: 0;
+    margin-bottom: 20px;
+    color: #333;
+  }
+  
+  .driver-info {
+    margin-bottom: 20px;
+    font-size: 16px;
+    color: #555;
+  }
+  
+  .rating-stars {
+    display: flex;
+    justify-content: center;
+    margin: 20px 0;
+    gap: 8px;
+  }
+  
+  .star-btn {
+    background: none;
+    border: none;
+    font-size: 36px;
+    color: #ddd;
+    cursor: pointer;
+    transition: color 0.2s ease;
+    padding: 0 5px;
+  }
+  
+  .star-btn.selected {
+    color: #ffc107;
+  }
+  
+  .star-btn:hover {
+    transform: scale(1.1);
+  }
+  
+  .rating-label {
+    text-align: center;
+    font-size: 16px;
+    height: 20px;
+    margin-bottom: 20px;
+    color: #555;
+  }
+  
+  .rating-result {
+    text-align: center;
+  }
+  
+  .result-message {
+    padding: 15px;
+    margin-bottom: 20px;
+    border-radius: 5px;
+  }
+  
+  .result-message.success {
+    background-color: #d4edda;
+    color: #155724;
+  }
+  
+  .result-message.error {
+    background-color: #f8d7da;
+    color: #721c24;
+  }
+  
+  .modal-actions {
+    display: flex;
+    justify-content: flex-end;
+    gap: 10px;
+  }
+  
+  .cancel-btn, .close-btn {
+    background-color: #e2e8f0;
+    color: #4a5568;
+    border: none;
+    padding: 10px 16px;
+    border-radius: 5px;
+    cursor: pointer;
+    font-size: 14px;
+  }
+  
+  .submit-btn {
+    background-color: #4F46E5;
+    color: white;
+    border: none;
+    padding: 10px 16px;
+    border-radius: 5px;
+    cursor: pointer;
+    font-size: 14px;
+  }
+  
+  .submit-btn:disabled, .cancel-btn:disabled {
+    opacity: 0.7;
+    cursor: not-allowed;
+  }

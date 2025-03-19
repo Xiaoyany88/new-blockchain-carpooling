@@ -248,13 +248,58 @@ const useCarpoolSystem = (provider: ethers.providers.Web3Provider | null) => {
     }
   }, [contract]);
 
+  const rateDriver = async (rideId: number, driverAddress: string, rating: number) => {
+    if (!provider || !contract) {
+      return { success: false, error: "Wallet not connected" };
+    }
+  
+    try {
+      const signer = provider.getSigner();
+      const carpoolSystemWithSigner = contract.connect(signer);
+      
+      // Ensure rating is between 1-5
+      const validRating = Math.min(Math.max(1, rating), 5);
+      
+      console.log(`Rating driver ${driverAddress} for ride ${rideId} with ${validRating} stars`);
+      
+      const tx = await carpoolSystemWithSigner.rateDriver(rideId, driverAddress, validRating);
+      await tx.wait();
+      
+      return { success: true };
+    } catch (error: any) {
+      console.error("Error rating driver:", error);
+      return { success: false, error: error.message || "Failed to submit rating" };
+    }
+  };
+  const getDriverInfo = async (driverAddress: string) => {
+    if (!provider || !contract) {
+      console.error("Provider or contract not available");
+      return null;
+    }
+  
+    try {
+      console.log(`Fetching reputation for driver: ${driverAddress}`);
+      const result = await contract.getDriverInfo(driverAddress);
+      
+      return {
+        avgRating: result[0],
+        totalRides: result[1],
+        cancelledRides: result[2]
+      };
+    } catch (error) {
+      console.error("Error fetching driver reputation:", error);
+      throw error;
+    }
+  };
 
 
   return {
     bookRide,
     getUserBookings,
     completeRide,
-    cancelBookingFromSystem
+    cancelBookingFromSystem,
+    rateDriver,
+    getDriverInfo
   };
 };
 
