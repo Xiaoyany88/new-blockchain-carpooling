@@ -62,7 +62,7 @@ export const Header = () => {
     <header className="app-header">
       <div className="container">
         <Link to="/" className="logo">
-          BlockRide
+          Skibidi Ride
         </Link>
         
         <nav>

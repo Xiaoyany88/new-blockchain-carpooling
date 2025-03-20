@@ -90,3 +90,47 @@
     font-size: 14px;
     font-weight: 500;
   }
+
+  /* Star ratings styling */
+.star-rating {
+  display: inline-flex;
+  margin-left: 8px;
+}
+
+.star {
+  color: #ddd;
+  font-size: 18px;
+  margin-right: 2px;
+}
+
+.star.filled {
+  color: #ffc107;
+}
+
+.driver-info {
+  display: flex;
+  flex-direction: column;
+  gap: 5px;
+  margin-bottom: 10px;
+}
+
+.driver-rating {
+  display: flex;
+  align-items: center;
+}
+
+.no-rating {
+  margin-left: 8px;
+  color: #666;
+  font-style: italic;
+  font-size: 14px;
+}
+
+/* For mobile screens */
+@media (max-width: 768px) {
+  .driver-info {
+    flex-direction: column;
+  }
+}
+
+  

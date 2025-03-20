@@ -236,11 +236,6 @@
         "internalType": "uint256",
         "name": "totalRides",
         "type": "uint256"
-      },
-      {
-        "internalType": "uint256",
-        "name": "cancelledRides",
-        "type": "uint256"
       }
     ],
     "stateMutability": "view",

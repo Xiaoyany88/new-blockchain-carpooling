@@ -105,11 +105,6 @@
         "internalType": "uint256",
         "name": "completedRides",
         "type": "uint256"
-      },
-      {
-        "internalType": "uint256",
-        "name": "cancelledRides",
-        "type": "uint256"
       }
     ],
     "stateMutability": "view",
@@ -152,11 +147,6 @@
       {
         "internalType": "uint256",
         "name": "totalRides",
-        "type": "uint256"
-      },
-      {
-        "internalType": "uint256",
-        "name": "cancelledRides",
         "type": "uint256"
       }
     ],
@@ -224,19 +214,6 @@
       }
     ],
     "name": "rateUser",
-    "outputs": [],
-    "stateMutability": "nonpayable",
-    "type": "function"
-  },
-  {
-    "inputs": [
-      {
-        "internalType": "address",
-        "name": "_driver",
-        "type": "address"
-      }
-    ],
-    "name": "recordRideCancellation",
     "outputs": [],
     "stateMutability": "nonpayable",
     "type": "function"

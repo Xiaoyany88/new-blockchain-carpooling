@@ -111,7 +111,7 @@ export const DriverDashboard = () => {
             <p>View your driver ratings and feedback</p>
             <button 
               className="dashboard-btn"
-              onClick={() => setShowReputation(true)} // Add this handler
+              onClick={() => setShowReputation(true)} // Update handler
             >
               View Reputation
             </button>

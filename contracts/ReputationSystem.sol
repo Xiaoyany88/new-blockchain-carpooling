@@ -12,7 +12,7 @@ contract ReputationSystem {
         uint256 totalRating;   // Sum of all ratings received
         uint256 ratingCount;   // Number of ratings received
         uint256 completedRides;  // Count of successfully completed rides
-        uint256 cancelledRides;  // Count of rides the driver cancelled
+        //uint256 cancelledRides;  // Count of rides the driver cancelled
     }
 
     mapping(address => Reputation) public reputations;  // General user reputation
@@ -56,11 +56,11 @@ contract ReputationSystem {
         emit RideCompleted(_driver);
     }
 
-    function recordRideCancellation(address _driver) external {
+    /*function recordRideCancellation(address _driver) external {
         DriverReputation storage rep = driverReputations[_driver];
         rep.cancelledRides++;
         emit RideCancelled(_driver);
-    }
+    }*/
 
     /**
      * @notice Retrieves the average rating for a user.
@@ -77,12 +77,12 @@ contract ReputationSystem {
 
     function getDriverStats(address _driver) external view returns (
         uint256 avgRating,
-        uint256 totalRides,
-        uint256 cancelledRides
+        uint256 totalRides
+        /*uint256 cancelledRides*/
     ) {
         DriverReputation storage rep = driverReputations[_driver];
         avgRating = rep.ratingCount > 0 ? rep.totalRating / rep.ratingCount : 0;
         totalRides = rep.completedRides;
-        cancelledRides = rep.cancelledRides;
+        /*cancelledRides = rep.cancelledRides;*/
     }
 }

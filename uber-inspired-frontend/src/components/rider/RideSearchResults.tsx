@@ -4,6 +4,7 @@ import useProvider from '../../hooks/useProvider';
 import useRideOffer from '../../hooks/useRideOffer';
 import { ethers } from 'ethers';
 import { BookRideButton } from './BookRideButton';
+import useCarpoolSystem from '../../hooks/useCarpoolSystem';
 import './RideSearchResults.css';
 
 type Ride = {
@@ -17,6 +18,7 @@ type Ride = {
   pricePerSeat: string;
   additionalNotes: string;
   isActive: boolean;
+  driverRating?: number;
 };
 
 type SearchFilters = {
@@ -28,6 +30,7 @@ type SearchFilters = {
 export const RideSearchResults = ({ filters }: { filters?: SearchFilters }) => {
   const provider = useProvider();
   const { getAvailableRides, getRide } = useRideOffer(provider);
+  const { getDriverInfo } = useCarpoolSystem(provider); 
   const [allRides, setRides] = useState<Ride[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
@@ -77,10 +80,21 @@ export const RideSearchResults = ({ filters }: { filters?: SearchFilters }) => {
           if (!rideData) {
             console.log(`No data found for ride ID: ${id}`);
             return null; // Return null for this ride
-        }
+          }
+
+          let driverRating = 0;
+          try {
+            if (getDriverInfo) {
+              const reputationData = await getDriverInfo(rideData.driver);
+              driverRating = reputationData ? reputationData.avgRating.toNumber() : 0;
+            }
+          } catch (err) {
+            console.log(`Could not fetch rating for driver ${rideData.driver}:`, err);
+          }
           return {
             id,
             ...rideData,
+            driverRating,
             // Handle various possible formats of pricePerSeat
             pricePerSeat: ethers.BigNumber.isBigNumber(rideData.pricePerSeat)
               ? ethers.utils.formatEther(rideData.pricePerSeat)
@@ -101,7 +115,7 @@ export const RideSearchResults = ({ filters }: { filters?: SearchFilters }) => {
     };
     
     loadRides();
-  }, [provider, getAvailableRides, getRide]);
+  }, [provider, getAvailableRides, getRide, getDriverInfo]);
   
   if (!provider) {
     return <div className="loading-message">Please connect your wallet to view available rides.</div>;
@@ -149,7 +163,18 @@ export const RideSearchResults = ({ filters }: { filters?: SearchFilters }) => {
     </div>
   );
 };
-
+// Helper component to render star ratings
+const StarRating = ({ rating }: { rating: number }) => {
+  return (
+    <div className="star-rating">
+      {[1, 2, 3, 4, 5].map((star) => (
+        <span key={star} className={star <= rating ? "star filled" : "star"}>
+          {star <= rating ? "★" : "☆"}
+        </span>
+      ))}
+    </div>
+  );
+};
 const RideCard = ({ ride }: { ride: Ride }) => {
   // RideCard remains the same
   return (
@@ -159,7 +184,18 @@ const RideCard = ({ ride }: { ride: Ride }) => {
         <p><strong>Departure:</strong> {new Date(ride.departureTime * 1000).toLocaleString()}</p>
         <p><strong>Available Seats:</strong> {ride.availableSeats} / {ride.maxPassengers}</p>
         <p><strong>Price per Seat:</strong> {ride.pricePerSeat} ETH</p>
-        <p><strong>Driver:</strong> {`${ride.driver.substring(0, 6)}...${ride.driver.substring(38)}`}</p>
+        {/* New driver info section with rating */}
+        <div className="driver-info">
+          <p><strong>Driver:</strong> {`${ride.driver.substring(0, 6)}...${ride.driver.substring(38)}`}</p>
+          <div className="driver-rating">
+            <strong>Rating:</strong> 
+            {ride.driverRating !== undefined && ride.driverRating > 0 ? (
+              <StarRating rating={ride.driverRating} />
+            ) : (
+              <span className="no-rating">Not rated yet</span>
+            )}
+          </div>
+        </div>
         {ride.additionalNotes && <p><strong>Notes:</strong> {ride.additionalNotes}</p>}
       </div>
       <BookRideButton ride={ride} />

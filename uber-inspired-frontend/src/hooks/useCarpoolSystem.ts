@@ -7,23 +7,48 @@ import { CONTRACT_ADDRESSES } from "../config/contracts";
 
 const useCarpoolSystem = (provider: ethers.providers.Web3Provider | null) => {
   const [contract, setContract] = useState<ethers.Contract | null>(null);
+  const [contractReady, setContractReady] = useState(false);
+  const [contractInitialized, setContractInitialized] = useState(false); // Add this line
 
   useEffect(() => {
     if (!provider) return;
+    if (contractInitialized) return; // Don't try to initialize again if we've already tried
 
     // Initialize contract
-    try {
-      const signer = provider.getSigner();
-      const carpoolContract = new ethers.Contract(
-        CONTRACT_ADDRESSES.CARPOOL_SYSTEM, 
-        CARPOOL_ABI, 
-        signer
-      );
-      setContract(carpoolContract);
-    } catch (error) {
-      console.error("Error initializing carpool contract:", error);
-    }
-  }, [provider]);
+    const initContract = async () => { // Make this async
+      try {
+        setContractInitialized(true);
+        const signer = provider.getSigner();
+        
+        // Log what network we're connected to for debugging
+        const network = await provider.getNetwork();
+        console.log("Connected to network:", network.name, network.chainId);
+        
+        console.log("Initializing contract at address:", CONTRACT_ADDRESSES.CARPOOL_SYSTEM);
+        const carpoolContract = new ethers.Contract(
+          CONTRACT_ADDRESSES.CARPOOL_SYSTEM, 
+          CARPOOL_ABI, 
+          signer
+        );
+        
+        // Test that the contract is working by calling a simple view function
+        try {
+          const rideOfferAddress = await carpoolContract.rideOffer();
+          console.log("Successfully connected to contract. RideOffer address:", rideOfferAddress);
+          setContract(carpoolContract);
+          setContractReady(true); // Mark as ready only after successful validation
+        } catch (contractError) {
+          console.error("Contract exists but might not be valid:", contractError);
+          
+        }
+      } catch (error) {
+        console.error("Error initializing carpool contract:", error);
+      }
+    };
+    
+    initContract();
+  }, [provider, contractInitialized]);
+
 
   const bookRide = useCallback(async (
     rideId: number, 
@@ -271,9 +296,23 @@ const useCarpoolSystem = (provider: ethers.providers.Web3Provider | null) => {
       return { success: false, error: error.message || "Failed to submit rating" };
     }
   };
-  const getDriverInfo = async (driverAddress: string) => {
-    if (!provider || !contract) {
-      console.error("Provider or contract not available");
+  const getDriverInfo = useCallback(async (driverAddress: string) => {
+    if (!provider) {
+      console.error("Provider not available");
+      return null;
+    }
+    
+    if (!contract || !contractReady) {
+      console.error("Contract not initialized yet");
+      
+      // For development only - return mock data
+      if (process.env.NODE_ENV === 'development') {
+        console.log("DEV MODE: Returning mock reputation data");
+        return {
+          avgRating: { toNumber: () => 0 },
+          totalRides: { toNumber: () => 0 }
+        };
+      }
       return null;
     }
   
@@ -283,14 +322,13 @@ const useCarpoolSystem = (provider: ethers.providers.Web3Provider | null) => {
       
       return {
         avgRating: result[0],
-        totalRides: result[1],
-        cancelledRides: result[2]
+        totalRides: result[1]
       };
     } catch (error) {
       console.error("Error fetching driver reputation:", error);
       throw error;
     }
-  };
+  }, [contract, contractReady]);
 
 
   return {
@@ -299,7 +337,8 @@ const useCarpoolSystem = (provider: ethers.providers.Web3Provider | null) => {
     completeRide,
     cancelBookingFromSystem,
     rateDriver,
-    getDriverInfo
+    getDriverInfo,
+    contractReady
   };
 };
 

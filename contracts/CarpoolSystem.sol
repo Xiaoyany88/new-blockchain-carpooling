@@ -84,7 +84,7 @@ contract CarpoolSystem {
         rideOffer.completeRideFromSystem(_rideId, msg.sender, _passenger);
         
         // Update driver reputation
-        //reputationSystem.recordRideCompletion(driver);
+        reputationSystem.recordRideCompletion(driver);
         
         // Release payment for this passenger
         paymentEscrow.releasePayment(_rideId, payable(driver), _passenger);
@@ -149,12 +149,12 @@ contract CarpoolSystem {
      * @param _driver The driver's address
      * @return avgRating Average rating (1-5)
      * @return totalRides Total completed rides
-     * @return cancelledRides Number of cancelled rides
      */
+    //@return cancelledRides Number of cancelled rides
     function getDriverInfo(address _driver) external view returns (
         uint256 avgRating,
-        uint256 totalRides,
-        uint256 cancelledRides
+        uint256 totalRides
+        /*uint256 cancelledRides*/
     ) {
         return reputationSystem.getDriverStats(_driver);
     }
