@@ -84,6 +84,19 @@ async function main() {
   await updateTx.wait();
   console.log("Updated RideOffer address in CarpoolSystem");
 
+  // Step 5: Authorize CarpoolSystem in CarpoolToken
+  console.log("Authorizing CarpoolSystem in CarpoolToken...");
+  const carpoolTokenAddress = await carpoolToken.getAddress();
+  const authorizeTx = await signer.sendTransaction({
+    to: carpoolTokenAddress,
+    data: new ethers.Interface([
+      "function setAuthorizedSystem(address _system, bool _authorized)"
+    ]).encodeFunctionData("setAuthorizedSystem", [carpoolSystemAddress, true])
+  });
+  
+  await authorizeTx.wait();
+  console.log("CarpoolSystem authorized successfully in CarpoolToken");
+
   // Verification
   if (!isLocalNetwork) {
     console.log("\nStarting verification process...");

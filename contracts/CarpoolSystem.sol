@@ -90,7 +90,7 @@ contract CarpoolSystem {
         paymentEscrow.releasePayment(_rideId, payable(driver), _passenger);
         
         // Issue token rewards
-        // issueRewardTokens(driver);
+        issueRewardTokens(driver);
         
         emit RideCompleted(_rideId, driver, _passenger);
     }
@@ -165,7 +165,75 @@ contract CarpoolSystem {
      */
     function issueRewardTokens(address _user) internal {
         uint256 rewardAmount = 10 * 10**18; // 10 tokens
-        carpoolToken.mint(_user, rewardAmount);
+        carpoolToken.rewardFromSystem(_user);
         emit RewardTokensIssued(_user, rewardAmount);
+    }
+
+    // Add this after issueRewardTokens function
+    /**
+    * @notice Exchange tokens for ETH
+    * @param _tokenAmount The amount of tokens to exchange
+    */
+    function exchangeTokensForETH(uint256 _tokenAmount) external {
+        require(_tokenAmount > 0, "Amount must be greater than 0");
+        
+        // Check if the user has enough tokens
+        uint256 userBalance = carpoolToken.balanceOf(msg.sender);
+        require(userBalance >= _tokenAmount, "Insufficient token balance");
+        
+        // Calculate ETH amount (1 token = 0.0001 ETH)
+        uint256 ethAmount = (_tokenAmount * 1 ether) /(10000 * 10**18);
+        
+        // Check if contract has enough ETH
+        require(address(this).balance >= ethAmount, "Insufficient ETH in contract");
+        
+        // Transfer tokens from user to contract
+        bool success = carpoolToken.transferFrom(msg.sender, address(this), _tokenAmount);
+        require(success, "Token transfer failed");
+        
+        // Transfer ETH to user
+        (bool sent, ) = msg.sender.call{value: ethAmount}("");
+        require(sent, "ETH transfer failed");
+        
+        emit TokensExchanged(msg.sender, _tokenAmount, ethAmount);
+    }
+
+    // Add a receive function to allow the contract to receive ETH
+    receive() external payable {}
+
+    // Add this event to the events section at the top
+    event TokensExchanged(address indexed user, uint256 tokenAmount, uint256 ethAmount);
+    
+    /**
+    * @notice Get user's token balance
+    * @param _user The address of the user
+    * @return balance The user's token balance
+    */
+    function getTokenBalance(address _user) external view returns (uint256 balance) {
+        return carpoolToken.balanceOf(_user);
+    }
+
+    /**
+    * @notice Get exchange rate for tokens to ETH
+    * @return rate The exchange rate (tokens per ETH)
+    */
+    function getExchangeRate() external pure returns (uint256 rate) {
+        return 10000; // 10000 tokens for 1 ETH
+    }
+
+    function checkExchangeViability(uint256 _tokenAmount) external view returns (
+        uint256 ethRequired,
+        uint256 contractBalance,
+        bool hasEnoughBalance,
+        uint256 userBalance,
+        bool hasEnoughTokens
+    ) {
+        ethRequired = (_tokenAmount * 1 ether) / 10000;
+        contractBalance = address(this).balance;
+        hasEnoughBalance = contractBalance >= ethRequired;
+        userBalance = carpoolToken.balanceOf(msg.sender);
+        hasEnoughTokens = userBalance >= _tokenAmount;
+        
+        return (ethRequired, contractBalance, hasEnoughBalance, userBalance, hasEnoughTokens);
     }
 }

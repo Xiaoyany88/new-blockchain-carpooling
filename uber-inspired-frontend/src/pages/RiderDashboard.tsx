@@ -142,18 +142,6 @@ export const RiderDashboard = () => {
                 View Bookings
               </button>
             </div>
-            
-            <div className="dashboard-card">
-              <h2>Ride History</h2>
-              <p>Review your past rides and ratings</p>
-              <button className="dashboard-btn">View History</button>
-            </div>
-            
-            <div className="dashboard-card">
-              <h2>Rewards</h2>
-              <p>Check your token balance and rewards</p>
-              <button className="dashboard-btn">View Rewards</button>
-            </div>
           </div>
         </>
       )}

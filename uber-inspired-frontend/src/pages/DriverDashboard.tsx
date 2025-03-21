@@ -4,6 +4,7 @@ import useProvider from '../hooks/useProvider';
 import { CreateRideForm } from '../components/driver/CreateRideForm';
 import { DriverRides } from '../components/driver/DriverRides';
 import { DriverReputation } from '../components/driver/DriverReputation';
+import { DriverTokens } from '../components/driver/DriverTokens';
 import './DriverDashboard.css';
 
 export const DriverDashboard = () => {
@@ -12,6 +13,8 @@ export const DriverDashboard = () => {
   const [showCreateForm, setShowCreateForm] = useState(false);
   const [showRides, setShowRides] = useState(false);
   const [showReputation, setShowReputation] = useState(false);
+  // Add state for showing tokens
+  const [showTokens, setShowTokens] = useState(false);
   
   useEffect(() => {
     const checkConnection = async () => {
@@ -40,6 +43,7 @@ export const DriverDashboard = () => {
     setShowCreateForm(false);
     setShowRides(false);
     setShowReputation(false);
+    setShowTokens(false); 
   };
   
   return (
@@ -76,6 +80,16 @@ export const DriverDashboard = () => {
           </button>
           <DriverReputation />
         </>
+      ) : showTokens ? ( // Add this condition
+        <>
+          <button 
+            className="back-button"
+            onClick={handleBackToDashboard}
+          >
+            ← Back to Dashboard
+          </button>
+          <DriverTokens />
+        </>
       ) : (
         <div className="dashboard-grid">
           <div className="dashboard-card">
@@ -101,9 +115,14 @@ export const DriverDashboard = () => {
           </div>
           
           <div className="dashboard-card">
-            <h2>Earnings</h2>
-            <p>Track your earnings and rewards</p>
-            <button className="dashboard-btn">View Earnings</button>
+            <h2>Tokens & Earnings</h2>
+            <p>Manage your tokens and convert to ETH</p>
+            <button 
+              className="dashboard-btn"
+              onClick={() => setShowTokens(true)}  // Update handler
+            >
+              Manage Tokens
+            </button>
           </div>
           
           <div className="dashboard-card">

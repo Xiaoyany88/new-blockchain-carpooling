@@ -330,6 +330,80 @@ const useCarpoolSystem = (provider: ethers.providers.Web3Provider | null) => {
     }
   }, [contract, contractReady]);
 
+  // Add these new functions to your useCarpoolSystem hook
+
+  const getTokenBalance = useCallback(async (address: string) => {
+    if (!contract || !contractReady) {
+      console.error("Contract not initialized yet");
+      return ethers.BigNumber.from(0);
+    }
+  
+    try {
+      console.log("Calling getTokenBalance for address:", address);
+      // Make sure this matches your contract function name exactly
+      return await contract.getTokenBalance(address);
+    } catch (error) {
+      console.error("Error getting token balance:", error);
+      throw error;
+    }
+  }, [contract, contractReady]);
+
+const getExchangeRate = async () => {
+  if (!contract || !contractReady) {
+    console.error("Contract not initialized yet");
+    return ethers.BigNumber.from(10000); // Default rate
+  }
+
+  try {
+    return await contract.getExchangeRate();
+  } catch (error) {
+    console.error("Error getting exchange rate:", error);
+    throw error;
+  }
+};
+
+const exchangeTokensForETH = async (tokenAmount: ethers.BigNumber) => {
+    if (!contract) {
+      return {
+        success: false,
+        error: "Wallet not connected"
+      };
+    }
+
+    try {
+      // First, approve the tokens for transfer
+      const carpoolTokenAddress = await contract.carpoolToken();
+      const tokenContract = new ethers.Contract(
+        carpoolTokenAddress,
+        ["function approve(address spender, uint256 amount) public returns (bool)"],
+        contract.signer
+      );
+      
+      // Approve the tokens first
+      const approveTx = await tokenContract.approve(contract.address, tokenAmount);
+      await approveTx.wait();
+      
+      // Then exchange tokens for ETH
+      const tx = await contract.exchangeTokensForETH(tokenAmount, {
+        gasLimit: 700000, // Set a high enough gas limit manually
+        gasPrice: ethers.utils.parseUnits('20', 'gwei') // Specify gas price
+      });
+      const receipt = await tx.wait();
+      
+      return {
+        success: true,
+        transactionHash: receipt.transactionHash
+      };
+    } catch (error: any) {
+      console.error("Error exchanging tokens:", error);
+      return {
+        success: false,
+        error: error.message || "Failed to exchange tokens"
+      };
+    }
+  };
+
+
 
   return {
     bookRide,
@@ -338,7 +412,11 @@ const useCarpoolSystem = (provider: ethers.providers.Web3Provider | null) => {
     cancelBookingFromSystem,
     rateDriver,
     getDriverInfo,
-    contractReady
+    getTokenBalance,     // Add this
+    getExchangeRate,     // Add this
+    exchangeTokensForETH, // Add this
+    contractReady,
+    contract
   };
 };
 

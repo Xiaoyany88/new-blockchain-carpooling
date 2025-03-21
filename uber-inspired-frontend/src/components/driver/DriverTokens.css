@@ -1,0 +1,284 @@
+.driver-tokens {
+    max-width: 800px;
+    margin: 0 auto;
+    padding: 20px;
+  }
+  
+  .driver-tokens h2 {
+    margin-bottom: 24px;
+    font-size: 28px;
+    text-align: center;
+    color: #222;
+  }
+  
+  .token-card {
+    background-color: white;
+    border-radius: 10px;
+    box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
+    padding: 24px;
+    margin-bottom: 24px;
+  }
+  
+  .token-balance {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    margin-bottom: 20px;
+  }
+  
+  .token-label {
+    font-size: 16px;
+    color: #666;
+    margin-bottom: 8px;
+  }
+  
+  .token-value {
+    font-size: 36px;
+    font-weight: bold;
+    color: #4F46E5;
+  }
+  
+  .token-info {
+    background-color: #F3F4F6;
+    border-radius: 8px;
+    padding: 16px;
+  }
+  
+  .token-info p {
+    margin: 8px 0;
+    color: #4B5563;
+    line-height: 1.5;
+  }
+  
+  .exchange-card {
+    background-color: white;
+    border-radius: 10px;
+    box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
+    padding: 24px;
+    margin-bottom: 24px;
+  }
+  
+  .exchange-card h3 {
+    margin-top: 0;
+    margin-bottom: 20px;
+    font-size: 20px;
+    color: #333;
+    text-align: center;
+  }
+  
+  .exchange-form {
+    display: flex;
+    flex-direction: column;
+    gap: 16px;
+  }
+  
+  .input-group {
+    display: flex;
+    flex-direction: column;
+    gap: 8px;
+  }
+  
+  .input-group label {
+    font-size: 14px;
+    color: #4B5563;
+    font-weight: 500;
+  }
+  
+  .input-group input {
+    padding: 12px;
+    border: 1px solid #D1D5DB;
+    border-radius: 6px;
+    font-size: 16px;
+  }
+  
+  .eth-equivalent {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    background-color: #F9FAFB;
+    padding: 12px 16px;
+    border-radius: 6px;
+    color: #4B5563;
+  }
+  
+  .eth-equivalent strong {
+    color: #111827;
+  }
+  
+  .error-message {
+    background-color: #FEE2E2;
+    color: #B91C1C;
+    padding: 10px;
+    border-radius: 6px;
+    text-align: center;
+  }
+  
+  .success-message {
+    background-color: #D1FAE5;
+    color: #065F46;
+    padding: 10px;
+    border-radius: 6px;
+    text-align: center;
+  }
+  
+  .exchange-btn {
+    background-color: #4F46E5;
+    color: white;
+    border: none;
+    padding: 12px;
+    border-radius: 6px;
+    font-weight: 500;
+    font-size: 16px;
+    cursor: pointer;
+    transition: background-color 0.2s;
+  }
+  
+  .exchange-btn:hover:not(:disabled) {
+    background-color: #4338CA;
+  }
+  
+  .exchange-btn:disabled {
+    background-color: #A5B4FC;
+    cursor: not-allowed;
+  }
+  
+  .token-history {
+    background-color: white;
+    border-radius: 10px;
+    box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
+    padding: 24px;
+  }
+  
+  .token-history h3 {
+    margin-top: 0;
+    margin-bottom: 20px;
+    font-size: 20px;
+    color: #333;
+  }
+  
+  .history-item {
+    display: flex;
+    justify-content: space-between;
+    padding: 12px 0;
+    border-bottom: 1px solid #E5E7EB;
+  }
+  
+  .history-item:last-child {
+    border-bottom: none;
+  }
+  
+  .history-details {
+    display: flex;
+    flex-direction: column;
+    gap: 4px;
+  }
+  
+  .history-type {
+    font-weight: 500;
+    font-size: 16px;
+  }
+  
+  .history-type.earn {
+    color: #047857;
+  }
+  
+  .history-type.exchange {
+    color: #4338CA;
+  }
+  
+  .history-date {
+    color: #6B7280;
+    font-size: 14px;
+  }
+  
+  .history-amount {
+    font-weight: 500;
+    font-size: 16px;
+  }
+  
+  @media (max-width: 640px) {
+    .token-value {
+      font-size: 28px;
+    }
+    
+    .exchange-form {
+      gap: 12px;
+    }
+  }
+  .loading-state {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    padding: 40px;
+    background-color: white;
+    border-radius: 10px;
+    box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
+    text-align: center;
+  }
+  
+  .loading-spinner {
+    border: 4px solid rgba(0, 0, 0, 0.1);
+    width: 36px;
+    height: 36px;
+    border-radius: 50%;
+    border-left-color: #4F46E5;
+    margin: 0 auto 20px;
+    animation: spin 1s linear infinite;
+  }
+  
+  @keyframes spin {
+    0% { transform: rotate(0deg); }
+    100% { transform: rotate(360deg); }
+  }
+
+  /* Add these styles for the refresh button */
+.refresh-btn {
+  display: block;
+  margin-top: 12px;
+  background: none;
+  border: 1px solid #e5e7eb;
+  border-radius: 4px;
+  padding: 6px 12px;
+  font-size: 14px;
+  color: #4b5563;
+  cursor: pointer;
+  transition: all 0.2s;
+}
+
+.refresh-btn:hover:not(:disabled) {
+  background-color: #f9fafb;
+  color: #1f2937;
+}
+
+.refresh-btn:disabled {
+  opacity: 0.6;
+  cursor: not-allowed;
+}
+
+.loading-state {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  padding: 40px;
+  background-color: white;
+  border-radius: 10px;
+  box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
+  text-align: center;
+}
+
+.loading-spinner {
+  border: 4px solid rgba(0, 0, 0, 0.1);
+  width: 36px;
+  height: 36px;
+  border-radius: 50%;
+  border-left-color: #4F46E5;
+  margin: 0 auto 20px;
+  animation: spin 1s linear infinite;
+}
+
+@keyframes spin {
+  0% { transform: rotate(0deg); }
+  100% { transform: rotate(360deg); }
+}
