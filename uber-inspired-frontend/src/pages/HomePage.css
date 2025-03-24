@@ -1,0 +1,112 @@
+.home-page {
+    padding: 20px;
+    max-width: 1200px;
+    margin: 0 auto;
+  }
+  
+  .hero {
+    text-align: center;
+    margin: 40px 0 60px;
+  }
+  
+  h1 {
+    font-size: 48px;
+    margin-bottom: 16px;
+    color: #333;
+  }
+  
+  .subtitle {
+    font-size: 20px;
+    color: #666;
+  }
+  
+  .options-container {
+    display: flex;
+    gap: 24px;
+    margin-bottom: 60px;
+  }
+  
+  .option {
+    flex: 1;
+    border-radius: 12px;
+    height: 200px;
+    display: flex;
+    align-items: flex-end;
+    text-decoration: none;
+    color: white;
+    background-size: cover;
+    position: relative;
+    overflow: hidden;
+    transition: transform 0.3s;
+    box-shadow: 0 4px 6px rgba(0,0,0,0.1);
+  }
+  
+  .option:hover {
+    transform: translateY(-4px);
+  }
+  
+  .driver-option {
+    /*background: linear-gradient(rgba(0,0,0,0.5), rgba(0,0,0,0.7)), url('/images/driver-bg.jpg');
+    background-position: center;*/
+    background: linear-gradient(45deg, #4F46E5, #8B5CF6);
+    background-position: center;
+  }
+  
+  .rider-option {
+    /*background: linear-gradient(rgba(0,0,0,0.5), rgba(0,0,0,0.7)), url('/images/rider-bg.jpg');
+    background-position: center;*/
+    background: linear-gradient(45deg, #10B981, #3B82F6);
+    background-position: center;
+  }
+  
+  .option-content {
+    width: 100%;
+    padding: 24px;
+    background: linear-gradient(transparent, rgba(0,0,0,0.8));
+    
+  }
+  .option-content p {
+    color: white;
+  }
+  
+  
+  .option h2 {
+    font-size: 28px;
+    margin-bottom: 8px;
+    color: #ffffff;
+  }
+  
+  .info-section {
+    margin-bottom: 60px;
+  }
+  
+  .info-section h2 {
+    text-align: center;
+    margin-bottom: 32px;
+    font-size: 32px;
+    color: #333;
+  }
+  
+  .info-cards {
+    display: flex;
+    gap: 24px;
+  }
+  
+  .info-card {
+    flex: 1;
+    background-color: #f9f9f9;
+    border-radius: 12px;
+    padding: 24px;
+    text-align: center;
+    box-shadow: 0 2px 4px rgba(0,0,0,0.05);
+  }
+  
+  .info-card h3 {
+    font-size: 20px;
+    margin-bottom: 12px;
+    color: #333;
+  }
+  
+  .info-card p {
+    color: #666;
+  }

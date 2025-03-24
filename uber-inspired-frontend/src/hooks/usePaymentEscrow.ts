@@ -1,28 +1,19 @@
 import { useEffect, useState } from "react";
 import { ethers } from "ethers";
 import PaymentEscrowABI from "../abis/PaymentEscrow.json";
-
-interface PaymentEscrowContract extends ethers.Contract {
-  createRide: (driverAddress: string, options?: { value: ethers.BigNumber, gasLimit?: ethers.BigNumber }) => Promise<ethers.ContractTransaction>;
-  submitFeedback: (targetAddress: string, rating: number, options?: { gasLimit: ethers.BigNumber }) => Promise<ethers.ContractTransaction>;
-  getRideStatus: (rideId: string) => Promise<number>;
-  getRating: (address: string) => Promise<number>;
-  getStatus: (address: string) => Promise<number>;
-}
-
-const CONTRACT_ADDRESS = "0xd73a3F604a12a26442f446c245963c87ac7bC1BE"; // Replace with actual address
+import { CONTRACT_ADDRESSES } from "../config/contracts";
 
 const usePaymentEscrow = (provider: ethers.providers.Web3Provider | null) => {
-  const [contract, setContract] = useState<PaymentEscrowContract | null>(null);
+  const [contract, setContract] = useState<ethers.Contract | null>(null);
 
   useEffect(() => {
     if (provider) {
       const signer = provider.getSigner();
       const escrowContract = new ethers.Contract(
-        CONTRACT_ADDRESS,
+        CONTRACT_ADDRESSES.PAYMENT_ESCROW,
         PaymentEscrowABI,
         signer
-      ) as PaymentEscrowContract;
+      );
       setContract(escrowContract);
     }
   }, [provider]);
@@ -40,76 +31,72 @@ const usePaymentEscrow = (provider: ethers.providers.Web3Provider | null) => {
     }
   };
 
-  const createRide = async (driverAddress: string, fare: string) => {
-    if (!contract || !driverAddress || !fare) return null;
+  const escrowPayment = async (rideId: number, seats: number, amount: string) => {
+    if (!contract) return null;
     try {
-      const fareInWei = ethers.utils.parseEther(fare);
-      const gasEstimate = await contract.estimateGas.createRide(driverAddress, {
-        value: fareInWei
+      const amountInWei = ethers.utils.parseEther(amount);
+      const gasEstimate = await contract.estimateGas.escrowPayment(rideId, seats, {
+        value: amountInWei
       });
       const gasLimit = await estimateGas(Promise.resolve(gasEstimate));
 
-      // Fixed transaction call with proper options typing
-      const tx = await contract.createRide(
-        driverAddress,
+      const tx = await contract.escrowPayment(
+        rideId,
+        seats,
         { 
-          value: fareInWei,
+          value: amountInWei,
           gasLimit: gasLimit
         }
       );
       return await tx.wait();
     } catch (error) {
-      console.error("Error creating ride:", error);
+      console.error("Error escrowing payment:", error);
       throw error;
     }
   };
 
-  const getRideStatus = async (rideId: string) => {
-    if (!contract || !rideId) return null;
+  const releasePayment = async (rideId: number, driverAddress: string, passengerAddress: string) => {
+    if (!contract) return null;
     try {
-      const status = await contract.getRideStatus(rideId);
-      return status;
-    } catch (error) {
-      console.error("Error getting ride status:", error);
-      throw error;
-    }
-  };
-
-  const getStatus = async (address: string) => {
-    if (!contract || !address) return null;
-    try {
-      const status = await contract.getStatus(address);
-      return status;
-    } catch (error) {
-      console.error("Error getting status:", error);
-      throw error;
-    }
-  };
-
-  const submitFeedback = async (targetAddress: string, rating: number) => {
-    if (!contract || !targetAddress) return null;
-    try {
-      const gasEstimate = await contract.estimateGas.submitFeedback(targetAddress, rating);
+      const gasEstimate = await contract.estimateGas.releasePayment(rideId, driverAddress, passengerAddress);
       const gasLimit = await estimateGas(Promise.resolve(gasEstimate));
 
-      const tx = await contract.submitFeedback(
-        targetAddress, 
-        rating, 
-        { gasLimit }  // Pass gasLimit as part of the options object
+      const tx = await contract.releasePayment(
+        rideId,
+        driverAddress,
+        passengerAddress,
+        { gasLimit }
       );
       return await tx.wait();
     } catch (error) {
-      console.error("Error submitting feedback:", error);
+      console.error("Error releasing payment:", error);
+      throw error;
+    }
+  };
+
+  const refundPayment = async (rideId: number, passengerAddress: string) => {
+    if (!contract) return null;
+    try {
+      const gasEstimate = await contract.estimateGas.refundPayment(rideId, passengerAddress);
+      const gasLimit = await estimateGas(Promise.resolve(gasEstimate));
+
+      const tx = await contract.refundPayment(
+        rideId,
+        passengerAddress,
+        { gasLimit }
+      );
+      return await tx.wait();
+    } catch (error) {
+      console.error("Error refunding payment:", error);
       throw error;
     }
   };
 
   return {
     contract,
-    createRide,
-    getRideStatus,
-    getStatus,
-    submitFeedback  // Add this to the returned object
+    escrowPayment,
+    releasePayment,
+    refundPayment
   };
 };
 

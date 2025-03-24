@@ -1,0 +1,154 @@
+.modal-overlay {
+    position: fixed;
+    top: 0;
+    left: 0;
+    right: 0;
+    bottom: 0;
+    background-color: rgba(0, 0, 0, 0.5);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    z-index: 1000;
+  }
+  
+  .modal-content {
+    background-color: white;
+    border-radius: 10px;
+    padding: 24px;
+    width: 90%;
+    max-width: 500px;
+    max-height: 90vh;
+    overflow-y: auto;
+    position: relative;
+    box-shadow: 0 4px 20px rgba(0, 0, 0, 0.15);
+  }
+  
+  .close-modal-btn {
+    position: absolute;
+    right: 16px;
+    top: 16px;
+    background: none;
+    border: none;
+    font-size: 24px;
+    cursor: pointer;
+    color: #6B7280;
+  }
+  
+  .close-modal-btn:hover {
+    color: #1F2937;
+  }
+  
+  .cancel-booking-modal h3 {
+    margin-top: 0;
+    margin-bottom: 20px;
+    color: #1F2937;
+    border-bottom: 1px solid #E5E7EB;
+    padding-bottom: 16px;
+  }
+  
+  .booking-summary {
+    margin-bottom: 20px;
+    background-color: #F9FAFB;
+    padding: 16px;
+    border-radius: 8px;
+  }
+  
+  .booking-summary p {
+    margin: 6px 0;
+  }
+  
+  .cancellation-policy {
+    margin-bottom: 24px;
+  }
+  
+  .cancellation-policy h4 {
+    margin-top: 0;
+    margin-bottom: 10px;
+    color: #1F2937;
+  }
+  
+  .policy-highlight {
+    padding: 12px;
+    border-radius: 8px;
+    margin-bottom: 16px;
+    font-size: 14px;
+    line-height: 1.5;
+  }
+  
+  .policy-highlight.warning {
+    background-color: #FECACA;
+    color: #991B1B;
+  }
+  
+  .policy-highlight.success {
+    background-color: #D1FAE5;
+    color: #065F46;
+  }
+  
+  .acknowledge-label {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    margin-top: 16px;
+    color: #4B5563;
+    cursor: pointer;
+  }
+  
+  .modal-actions {
+    display: flex;
+    justify-content: flex-end;
+    gap: 12px;
+    margin-top: 24px;
+  }
+  
+  .modal-btn {
+    padding: 10px 20px;
+    border-radius: 6px;
+    font-size: 14px;
+    font-weight: 500;
+    cursor: pointer;
+    transition: background-color 0.2s;
+  }
+  
+  .modal-btn.primary {
+    background-color: #EF4444;
+    color: white;
+    border: none;
+  }
+  
+  .modal-btn.primary:hover:not(:disabled) {
+    background-color: #DC2626;
+  }
+  
+  .modal-btn.secondary {
+    background-color: #F3F4F6;
+    color: #1F2937;
+    border: 1px solid #E5E7EB;
+  }
+  
+  .modal-btn.secondary:hover:not(:disabled) {
+    background-color: #E5E7EB;
+  }
+  
+  .modal-btn:disabled {
+    opacity: 0.7;
+    cursor: not-allowed;
+  }
+  
+  .result-container {
+    text-align: center;
+  }
+  
+  .result-container.success h3 {
+    color: #059669;
+  }
+  
+  .result-container.error h3 {
+    color: #DC2626;
+  }
+  
+  .countdown {
+    color: #6B7280;
+    font-size: 14px;
+    margin-top: 16px;
+  }

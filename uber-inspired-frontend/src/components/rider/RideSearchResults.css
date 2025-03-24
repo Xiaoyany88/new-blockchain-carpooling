@@ -1,0 +1,136 @@
+.ride-search-results {
+    padding: 20px;
+    max-width: 900px;
+    margin: 0 auto;
+  }
+  
+  .ride-search-results h2 {
+    margin-bottom: 20px;
+    color: #333;
+    font-size: 24px;
+  }
+  
+  .rides-container {
+    display: grid;
+    grid-template-columns: 1fr;
+    gap: 20px;
+  }
+  
+  .ride-card {
+    background-color: white;
+    border-radius: 12px;
+    box-shadow: 0 4px 8px rgba(0, 0, 0, 0.1);
+    padding: 20px;
+    transition: transform 0.2s;
+  }
+  
+  .ride-card:hover {
+    transform: translateY(-3px);
+  }
+  
+  .ride-card h3 {
+    font-size: 20px;
+    margin-bottom: 15px;
+    color: #333;
+  }
+  
+  .ride-details {
+    margin-bottom: 20px;
+  }
+  
+  .ride-details p {
+    margin: 8px 0;
+    color: #555;
+  }
+  
+  .error {
+    color: #EF4444;
+    padding: 20px;
+    background-color: #FEE2E2;
+    border-radius: 8px;
+    text-align: center;
+  }
+  
+  .loading-message, .empty-message {
+    text-align: center;
+    padding: 40px;
+    color: #555;
+  }
+  
+  @media (min-width: 768px) {
+    .rides-container {
+      grid-template-columns: repeat(auto-fill, minmax(400px, 1fr));
+    }
+  }
+
+  .applied-filters {
+    margin-bottom: 20px;
+    padding: 15px;
+    background-color: #f9fafb;
+    border-radius: 8px;
+  }
+  
+  .applied-filters h3 {
+    font-size: 16px;
+    margin-bottom: 10px;
+    color: #4b5563;
+  }
+  
+  .filter-tags {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 8px;
+  }
+  
+  .filter-tag {
+    background-color: #e0e7ff;
+    color: #4338ca;
+    padding: 5px 10px;
+    border-radius: 20px;
+    font-size: 14px;
+    font-weight: 500;
+  }
+
+  /* Star ratings styling */
+.star-rating {
+  display: inline-flex;
+  margin-left: 8px;
+}
+
+.star {
+  color: #ddd;
+  font-size: 18px;
+  margin-right: 2px;
+}
+
+.star.filled {
+  color: #ffc107;
+}
+
+.driver-info {
+  display: flex;
+  flex-direction: column;
+  gap: 5px;
+  margin-bottom: 10px;
+}
+
+.driver-rating {
+  display: flex;
+  align-items: center;
+}
+
+.no-rating {
+  margin-left: 8px;
+  color: #666;
+  font-style: italic;
+  font-size: 14px;
+}
+
+/* For mobile screens */
+@media (max-width: 768px) {
+  .driver-info {
+    flex-direction: column;
+  }
+}
+
+  

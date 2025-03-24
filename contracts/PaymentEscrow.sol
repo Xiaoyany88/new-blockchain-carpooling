@@ -2,81 +2,51 @@
 pragma solidity ^0.8.18;
 
 contract PaymentEscrow {
-    // Structure to store ride information
-    struct Ride {
-        uint256 rideId;
-        address payable passenger;
-        address payable driver;
-        uint256 amount;
-        bool completed;
-        bool refunded;
+    struct Payment {
+        uint256 rideId;             // Identifies which ride this payment is for
+        address payable passenger;  // Who made the payment (payable for refunds)
+        uint256 amount;             // How much ETH was paid
+        uint256 seats;              // Number of seats booked
+        bool released;              // Whether payment was sent to driver
+        bool refunded;              // Whether payment was returned to passenger
     }
 
-    uint256 public rideCounter;
-    mapping(uint256 => Ride) public rides;
+    mapping(uint256 => mapping(address => Payment)) public payments;
+    
+    event PaymentEscrowed(uint256 rideId, address passenger, uint256 amount, uint256 seats);
+    event PaymentReleased(uint256 rideId, address passenger, address driver, uint256 amount);
+    event PaymentRefunded(uint256 rideId, address passenger, uint256 amount);
 
-    // Events to log important actions
-    event RideCreated(uint256 rideId, address indexed passenger, address indexed driver, uint256 amount);
-    event RideCompleted(uint256 rideId);
-    event RideRefunded(uint256 rideId);
-
-    /**
-     * @notice Passenger creates a ride by depositing funds that are held in escrow.
-     * @param _driver The address of the driver offering the ride.
-     * @return rideId The unique identifier for the created ride.
-     */
-    function createRide(address payable _driver) external payable returns (uint256 rideId) {
-        require(msg.value > 0, "Must deposit funds for the ride");
-        rideCounter++;
-        rides[rideCounter] = Ride({
-            rideId: rideCounter,
-            passenger: payable(msg.sender),
-            driver: _driver,
+    function escrowPayment(uint256 _rideId, uint256 _seats, address _passenger) external payable {
+        require(msg.value > 0, "Payment required");
+        payments[_rideId][_passenger] = Payment({
+            rideId: _rideId,
+            passenger: payable(_passenger),
             amount: msg.value,
-            completed: false,
+            seats: _seats,
+            released: false,
             refunded: false
         });
-        emit RideCreated(rideCounter, msg.sender, _driver, msg.value);
-        return rideCounter;
+        emit PaymentEscrowed(_rideId, _passenger, msg.value, _seats);
     }
 
-    /**
-     * @notice Confirms ride completion and releases escrowed funds to the driver.
-     * @param _rideId The ride identifier.
-     *
-     * Requirements:
-     * - Only the passenger who created the ride can confirm its completion.
-     */
-    function confirmRide(uint256 _rideId) external {
-        Ride storage ride = rides[_rideId];
-        require(ride.passenger != address(0), "Ride does not exist");
-        require(!ride.completed, "Ride already completed");
-        require(!ride.refunded, "Ride already refunded");
-        require(msg.sender == ride.passenger, "Only the passenger can confirm completion");
-
-        ride.completed = true;
-        // Transfer the funds to the driver
-        ride.driver.transfer(ride.amount);
-        emit RideCompleted(_rideId);
+    function releasePayment(uint256 _rideId, address payable _driver, address _passenger) external {
+        Payment storage payment = payments[_rideId][_passenger];
+        require(!payment.released && !payment.refunded, "Payment already processed");
+        require(payment.amount > 0, "No payment to release");
+        
+        payment.released = true;
+        _driver.transfer(payment.amount);
+        emit PaymentReleased(_rideId, _passenger, _driver, payment.amount);
     }
 
-    /**
-     * @notice Refunds the escrowed funds to the passenger in case of cancellation.
-     * @param _rideId The ride identifier.
-     *
-     * Requirements:
-     * - Only the passenger can request a refund.
-     * - The ride must not already be completed or refunded.
-     */
-    function refundRide(uint256 _rideId) external {
-        Ride storage ride = rides[_rideId];
-        require(ride.passenger != address(0), "Ride does not exist");
-        require(!ride.completed, "Ride already completed, cannot refund");
-        require(!ride.refunded, "Ride already refunded");
-        require(msg.sender == ride.passenger, "Only the passenger can request a refund");
-
-        ride.refunded = true;
-        ride.passenger.transfer(ride.amount);
-        emit RideRefunded(_rideId);
+    function refundPayment(uint256 _rideId, address _passenger) external {
+        Payment storage payment = payments[_rideId][_passenger];
+        require(!payment.released && !payment.refunded, "Payment already processed");
+        require(payment.amount > 0, "No payment to refund");
+        
+        payment.refunded = true;
+        payment.passenger.transfer(payment.amount);
+        emit PaymentRefunded(_rideId, _passenger, payment.amount);
     }
 }

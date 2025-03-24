@@ -1,0 +1,95 @@
+/* src/components/rider/BookRideButton.css */
+.book-ride {
+  border-top: 1px solid #eee;
+  padding-top: 20px;
+  margin-top: 15px;
+}
+
+.seat-selector {
+  display: flex;
+  align-items: center;
+  margin-bottom: 12px;
+}
+
+.seat-selector label {
+  margin-right: 10px;
+  color: #555;
+  font-weight: 500;
+}
+
+.seat-selector select {
+  padding: 8px 12px;
+  border-radius: 6px;
+  border: 1px solid #ddd;
+  background-color: white;
+  min-width: 80px;
+}
+
+.price-display {
+  font-weight: 600;
+  margin-bottom: 15px;
+  color: #333;
+  font-size: 18px;
+}
+
+.book-button {
+  background-color: #4F46E5;
+  color: white;
+  border: none;
+  padding: 12px 20px;
+  border-radius: 8px;
+  cursor: pointer;
+  font-weight: 600;
+  transition: all 0.2s;
+  width: 100%;
+  font-size: 16px;
+}
+
+.book-button:hover {
+  background-color: #4338CA;
+  transform: translateY(-2px);
+}
+
+.book-button:disabled {
+  background-color: #9CA3AF;
+  cursor: not-allowed;
+  transform: none;
+}
+
+.booking-result {
+  margin-top: 15px;
+  padding: 12px 15px;
+  border-radius: 8px;
+  font-size: 14px;
+}
+
+.booking-result.success {
+  background-color: #D1FAE5;
+  border: 1px solid #10B981;
+  color: #047857;
+}
+
+.booking-result.error {
+  background-color: #FEE2E2;
+  border: 1px solid #EF4444;
+  color: #B91C1C;
+}
+
+.booking-result p {
+  margin: 0 0 8px 0;
+}
+
+.tx-info {
+  font-size: 13px;
+  display: flex;
+  gap: 5px;
+}
+
+.tx-info a {
+  color: #4F46E5;
+  text-decoration: none;
+}
+
+.tx-info a:hover {
+  text-decoration: underline;
+}
